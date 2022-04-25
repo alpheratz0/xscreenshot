@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <time.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 

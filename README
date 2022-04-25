@@ -1,0 +1,12 @@
+xscreenshot
+===========
+simple X11 program that takes an screenshot and saves it as a ppm.
+
+build
+=====
+in order to build xscreenshot you will need xcb headers
+$ make
+
+install
+=======
+$ sudo make install clean

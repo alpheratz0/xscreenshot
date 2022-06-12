@@ -28,13 +28,15 @@
 #include "debug.h"
 
 static bool
-match_opt(const char *in, const char *sh, const char *lo) {
+match_opt(const char *in, const char *sh, const char *lo)
+{
 	return (strcmp(in, sh) == 0) ||
 		   (strcmp(in, lo) == 0);
 }
 
 static void
-usage(void) {
+usage(void)
+{
 	puts("Usage: xscreenshot [ -hv ]");
 	puts("Options are:");
 	puts("     -h | --help                    display this message and exit");
@@ -43,13 +45,15 @@ usage(void) {
 }
 
 static void
-version(void) {
+version(void)
+{
 	puts("xscreenshot version "VERSION);
 	exit(0);
 }
 
 static char *
-screenshot_filename(void) {
+screenshot_filename(void)
+{
 	struct tm *tm_info;
 	size_t len;
 	char *filename;
@@ -64,7 +68,8 @@ screenshot_filename(void) {
 }
 
 static bitmap_t *
-screenshot(xcb_connection_t *connection, xcb_screen_t *screen) {
+screenshot(xcb_connection_t *connection, xcb_screen_t *screen)
+{
 	bitmap_t *bmp;
 	xcb_get_image_reply_t *reply;
 	u8 *data;
@@ -98,7 +103,8 @@ screenshot(xcb_connection_t *connection, xcb_screen_t *screen) {
 }
 
 int
-main(int argc, char **argv) {
+main(int argc, char **argv)
+{
 	/* skip program name */
 	--argc; ++argv;
 

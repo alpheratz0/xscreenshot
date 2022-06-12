@@ -8,7 +8,8 @@
 #include "bitmap.h"
 
 extern bitmap_t *
-bitmap_create(u32 width, u32 height) {
+bitmap_create(u32 width, u32 height)
+{
 	bitmap_t *bmp;
 
 	if ((bmp = malloc(sizeof(bitmap_t)))) {
@@ -25,12 +26,14 @@ bitmap_create(u32 width, u32 height) {
 }
 
 extern void
-bitmap_set(bitmap_t *bmp, u32 x, u32 y, u32 color) {
+bitmap_set(bitmap_t *bmp, u32 x, u32 y, u32 color)
+{
 	bmp->px[y*bmp->width+x] = color;
 }
 
 extern void
-bitmap_save(bitmap_t *bmp, const char *path) {
+bitmap_save(bitmap_t *bmp, const char *path)
+{
 	FILE *file;
 
 	if ((file = fopen(path, "wb"))) {
@@ -56,7 +59,8 @@ bitmap_save(bitmap_t *bmp, const char *path) {
 }
 
 extern void
-bitmap_free(bitmap_t *bmp) {
+bitmap_free(bitmap_t *bmp)
+{
 	free(bmp->px);
 	free(bmp);
 }

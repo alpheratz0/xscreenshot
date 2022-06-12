@@ -123,17 +123,17 @@ screenshot(xcb_connection_t *connection, xcb_screen_t *screen)
 int
 main(int argc, char **argv)
 {
+	xcb_connection_t *connection;
+	xcb_screen_t *screen;
+	char *filename;
+	bitmap_t *bmp;
+
 	if (++argv, --argc > 0) {
 		if (match_opt(*argv, "-h", "--help")) usage();
 		else if (match_opt(*argv, "-v", "--version")) version();
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);
 	}
-
-	xcb_connection_t *connection;
-	xcb_screen_t *screen;
-	char *filename;
-	bitmap_t *bmp;
 
 	if (xcb_connection_has_error(connection = xcb_connect(NULL, NULL))) {
 		die("can't open display");

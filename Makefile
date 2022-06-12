@@ -21,7 +21,7 @@ ${OBJ}:	src/debug.h \
 		src/bitmap.h
 
 xscreenshot: ${OBJ}
-	${CC} -o $@ ${OBJ} ${LDFLAGS}
+	@${CC} -o $@ ${OBJ} ${LDFLAGS}
 
 install: all
 	@mkdir -p ${DESTDIR}${PREFIX}/bin

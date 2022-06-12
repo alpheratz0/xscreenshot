@@ -34,13 +34,19 @@ match_opt(const char *in, const char *sh, const char *lo)
 		   (strcmp(in, lo) == 0);
 }
 
+static inline void
+print_opt(const char *sh, const char *lo, const char *desc)
+{
+	printf("%7s | %-25s %s\n", sh, lo, desc);
+}
+
 static void
 usage(void)
 {
 	puts("Usage: xscreenshot [ -hv ]");
 	puts("Options are:");
-	puts("     -h | --help                    display this message and exit");
-	puts("     -v | --version                 display the program version");
+	print_opt("-h", "--help", "display this message and exit");
+	print_opt("-v", "--version", "display the program version");
 	exit(0);
 }
 

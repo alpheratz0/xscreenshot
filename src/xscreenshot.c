@@ -111,10 +111,7 @@ screenshot(xcb_connection_t *connection, xcb_screen_t *screen)
 int
 main(int argc, char **argv)
 {
-	/* skip program name */
-	--argc; ++argv;
-
-	if (argc > 0) {
+	if (++argv, --argc > 0) {
 		if (match_opt(*argv, "-h", "--help")) usage();
 		else if (match_opt(*argv, "-v", "--version")) version();
 		else if (**argv == '-') dief("invalid option %s", *argv);

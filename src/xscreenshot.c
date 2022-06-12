@@ -55,10 +55,11 @@ print_opt(const char *sh, const char *lo, const char *desc)
 static void
 usage(void)
 {
-	puts("Usage: xscreenshot [ -hv ]");
+	puts("Usage: xscreenshot [ -hv ] [ -d DIRECTORY ]");
 	puts("Options are:");
 	print_opt("-h", "--help", "display this message and exit");
 	print_opt("-v", "--version", "display the program version");
+	print_opt("-d", "--directory", "set the directory to save the screenshot");
 	exit(0);
 }
 
@@ -125,12 +126,13 @@ main(int argc, char **argv)
 {
 	xcb_connection_t *connection;
 	xcb_screen_t *screen;
-	char *filename;
+	char *filename, *dir = NULL, fullpath[1024];
 	bitmap_t *bmp;
 
 	if (++argv, --argc > 0) {
 		if (match_opt(*argv, "-h", "--help")) usage();
 		else if (match_opt(*argv, "-v", "--version")) version();
+		else if (match_opt(*argv, "-d", "--directory") && --argc > 0) dir = *++argv;
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);
 	}
@@ -147,7 +149,12 @@ main(int argc, char **argv)
 	filename = screenshot_filename();
 	bmp = screenshot(connection, screen);
 
-	bitmap_save(bmp, filename);
+	if (NULL == dir) {
+		bitmap_save(bmp, filename);
+	} else {
+		snprintf(fullpath, sizeof(fullpath) - 1, "%s/%s", dir, filename);
+		bitmap_save(bmp, fullpath);
+	}
 
 	free(filename);
 	bitmap_free(bmp);

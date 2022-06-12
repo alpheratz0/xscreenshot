@@ -1,6 +1,6 @@
 xscreenshot
 ===========
-simple X11 program that takes an screenshot and saves it as a ppm.
+simple X11 program that takes a screenshot and saves it as a ppm.
 
 build
 =====

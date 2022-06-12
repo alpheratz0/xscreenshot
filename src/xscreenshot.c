@@ -117,7 +117,8 @@ main(int argc, char **argv)
 	if (argc > 0) {
 		if (match_opt(*argv, "-h", "--help")) usage();
 		else if (match_opt(*argv, "-v", "--version")) version();
-		else dief("invalid option %s", *argv);
+		else if (**argv == '-') dief("invalid option %s", *argv);
+		else dief("unexpected argument: %s", *argv);
 	}
 
 	xcb_connection_t *connection;

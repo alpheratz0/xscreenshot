@@ -8,17 +8,14 @@ CFLAGS = -std=c99 -pedantic -Wall -Wextra -Os ${INCS} -DVERSION="\"${VERSION}\""
 CC = cc
 
 SRC = src/xscreenshot.c \
-	  src/debug.c \
-	  src/bitmap.c
+	  src/debug.c
 
 
 OBJ = ${SRC:.c=.o}
 
 all: xscreenshot
 
-${OBJ}:	src/debug.h \
-		src/numdef.h \
-		src/bitmap.h
+${OBJ}:	src/debug.h
 
 xscreenshot: ${OBJ}
 	@${CC} -o $@ ${OBJ} ${LDFLAGS}

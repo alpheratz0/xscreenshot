@@ -13,11 +13,11 @@
 	this program; if not, write to the Free Software Foundation, Inc., 59 Temple
 	Place, Suite 330, Boston, MA 02111-1307 USA
 
-	 _______________ 
+	 _______________
 	( screenshotubi )
-	 --------------- 
+	 ---------------
 	  o
-	   o 
+	   o
 	      /  \~~~/  \
 	     (    ..     )----,
 	      \__     __/      \
@@ -27,6 +27,7 @@
 
 */
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -35,8 +36,6 @@
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 
-#include "bitmap.h"
-#include "numdef.h"
 #include "debug.h"
 
 static bool
@@ -70,55 +69,59 @@ version(void)
 	exit(0);
 }
 
-static char *
-screenshot_filename(void)
+static void
+screenshot(xcb_connection_t *connection, xcb_screen_t *screen, const char *dir)
 {
-	struct tm *tm_info;
-	size_t len;
-	char *filename;
-
-	len = 30;
-	filename = malloc(sizeof(char) * len);
-	tm_info = localtime((const time_t[1]) { time(NULL) });
-
-	strftime(filename, len - 1, "%Y%m%d%H%M%S.ppm", tm_info);
-
-	return filename;
-}
-
-static bitmap_t *
-screenshot(xcb_connection_t *connection, xcb_screen_t *screen)
-{
-	bitmap_t *bmp;
+	FILE *file;
+	xcb_get_image_cookie_t cookie;
 	xcb_get_image_reply_t *reply;
-	u8 *data;
+	xcb_generic_error_t *error;
+	char filename[sizeof("20220612093950.ppm")], savepath[1024];
+	uint32_t width, height;
+	uint8_t *pixels, pixel[3];
 
-	bmp = bitmap_create(screen->width_in_pixels, screen->height_in_pixels);
+	width = (uint32_t)(screen->width_in_pixels);
+	height = (uint32_t)(screen->height_in_pixels);
+	error = NULL;
 
-	reply = xcb_get_image_reply(
-		connection,
-		xcb_get_image_unchecked(
-			connection, XCB_IMAGE_FORMAT_Z_PIXMAP,
-			screen->root, 0, 0, screen->width_in_pixels, screen->height_in_pixels,
-			(u32)(~0UL)
-		),
-		NULL
+	cookie = xcb_get_image(
+		connection, XCB_IMAGE_FORMAT_Z_PIXMAP,
+		screen->root, 0, 0, width, height,
+		(uint32_t)(~0UL)
 	);
 
-	data = xcb_get_image_data(reply);
+	reply = xcb_get_image_reply(connection, cookie, &error);
 
-	for (u32 i = 0; i < screen->width_in_pixels * screen->height_in_pixels; ++i) {
-		bitmap_set(
-			bmp,
-			i % screen->width_in_pixels,
-			i / screen->width_in_pixels,
-			data[i * 4 + 2] << 16 | data[i * 4 + 1] << 8 | data[i * 4]
-		);
+	if (NULL != error) {
+		dief("xcb_get_image failed with error code: %d",
+				(int)(error->error_code));
 	}
 
-	free(reply);
+	pixels = xcb_get_image_data(reply);
 
-	return bmp;
+	strftime(
+		filename, sizeof(filename), "%Y%m%d%H%M%S.ppm",
+		localtime((const time_t[1]) { time(NULL) })
+	);
+
+	snprintf(savepath, sizeof(savepath), "%s/%s", dir, filename);
+
+	if (NULL == (file = fopen(savepath, "wb"))) {
+		dief("fopen failed: %s", strerror(errno));
+	}
+
+	fprintf(file, "P6\n%u %u 255\n", width, height);
+
+	for (uint32_t i = 0; i < width * height; ++i) {
+		pixel[0] = pixels[i*4+2];
+		pixel[1] = pixels[i*4+1];
+		pixel[2] = pixels[i*4];
+
+		fwrite(pixel, sizeof(pixel[0]), sizeof(pixel), file);
+	}
+
+	fclose(file);
+	free(reply);
 }
 
 int
@@ -126,8 +129,7 @@ main(int argc, char **argv)
 {
 	xcb_connection_t *connection;
 	xcb_screen_t *screen;
-	char *filename, *dir = NULL, fullpath[1024];
-	bitmap_t *bmp;
+	char *dir = ".";
 
 	if (++argv, --argc > 0) {
 		if (match_opt(*argv, "-h", "--help")) usage();
@@ -146,18 +148,7 @@ main(int argc, char **argv)
 		die("can't get default screen");
 	}
 
-	filename = screenshot_filename();
-	bmp = screenshot(connection, screen);
-
-	if (NULL == dir) {
-		bitmap_save(bmp, filename);
-	} else {
-		snprintf(fullpath, sizeof(fullpath) - 1, "%s/%s", dir, filename);
-		bitmap_save(bmp, fullpath);
-	}
-
-	free(filename);
-	bitmap_free(bmp);
+	screenshot(connection, screen, dir);
 	xcb_disconnect(connection);
 
 	return 0;

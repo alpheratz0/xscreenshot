@@ -38,6 +38,8 @@
 
 #include "debug.h"
 
+#define SCREENSHOT_FILENAME_LENGTH (sizeof("20220612093950.ppm"))
+
 static bool
 match_opt(const char *in, const char *sh, const char *lo)
 {
@@ -76,7 +78,7 @@ screenshot(xcb_connection_t *connection, xcb_screen_t *screen, const char *dir)
 	xcb_get_image_cookie_t cookie;
 	xcb_get_image_reply_t *reply;
 	xcb_generic_error_t *error;
-	char filename[sizeof("20220612093950.ppm")], savepath[1024];
+	char filename[SCREENSHOT_FILENAME_LENGTH], savepath[1024];
 	uint32_t width, height;
 	uint8_t *pixels, pixel[3];
 

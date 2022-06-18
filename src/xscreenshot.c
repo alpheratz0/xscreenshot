@@ -38,6 +38,7 @@
 
 #include "debug.h"
 
+#define SCREENSHOT_FILENAME_FORMAT ("%Y%m%d%H%M%S.ppm")
 #define SCREENSHOT_FILENAME_LENGTH (sizeof("20220612093950.ppm"))
 
 static bool
@@ -102,7 +103,7 @@ screenshot(xcb_connection_t *connection, xcb_screen_t *screen, const char *dir)
 	pixels = xcb_get_image_data(reply);
 
 	strftime(
-		filename, sizeof(filename), "%Y%m%d%H%M%S.ppm",
+		filename, sizeof(filename), SCREENSHOT_FILENAME_FORMAT,
 		localtime((const time_t[1]) { time(NULL) })
 	);
 

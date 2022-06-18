@@ -134,7 +134,10 @@ main(int argc, char **argv)
 	if (++argv, --argc > 0) {
 		if (match_opt(*argv, "-h", "--help")) usage();
 		else if (match_opt(*argv, "-v", "--version")) version();
-		else if (match_opt(*argv, "-d", "--directory") && --argc > 0) dir = *++argv;
+		else if (match_opt(*argv, "-d", "--directory")) {
+			if (--argc > 0) dir = *++argv;
+			else die("expected a directory");
+		}
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);
 	}

@@ -75,7 +75,7 @@ version(void)
 }
 
 static void
-screenshot(xcb_connection_t *connection, xcb_screen_t *screen, const char *dir)
+screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 {
 	FILE *file;
 	uint16_t width, height;
@@ -92,12 +92,12 @@ screenshot(xcb_connection_t *connection, xcb_screen_t *screen, const char *dir)
 	error = NULL;
 
 	cookie = xcb_get_image(
-		connection, XCB_IMAGE_FORMAT_Z_PIXMAP,
+		conn, XCB_IMAGE_FORMAT_Z_PIXMAP,
 		screen->root, 0, 0, width, height,
 		XCB_PLANES_ALL_PLANES
 	);
 
-	reply = xcb_get_image_reply(connection, cookie, &error);
+	reply = xcb_get_image_reply(conn, cookie, &error);
 
 	if (NULL != error) {
 		dief("xcb_get_image failed with error code: %d",
@@ -136,7 +136,7 @@ screenshot(xcb_connection_t *connection, xcb_screen_t *screen, const char *dir)
 int
 main(int argc, char **argv)
 {
-	xcb_connection_t *connection;
+	xcb_connection_t *conn;
 	xcb_screen_t *screen;
 	char *dir = ".";
 
@@ -151,17 +151,17 @@ main(int argc, char **argv)
 		else dief("unexpected argument: %s", *argv);
 	}
 
-	if (xcb_connection_has_error(connection = xcb_connect(NULL, NULL))) {
+	if (xcb_connection_has_error(conn = xcb_connect(NULL, NULL))) {
 		die("can't open display");
 	}
 
-	if (!(screen = xcb_setup_roots_iterator(xcb_get_setup(connection)).data)) {
-		xcb_disconnect(connection);
+	if (!(screen = xcb_setup_roots_iterator(xcb_get_setup(conn)).data)) {
+		xcb_disconnect(conn);
 		die("can't get default screen");
 	}
 
-	screenshot(connection, screen, dir);
-	xcb_disconnect(connection);
+	screenshot(conn, screen, dir);
+	xcb_disconnect(conn);
 
 	return 0;
 }

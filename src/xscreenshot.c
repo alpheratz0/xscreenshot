@@ -116,15 +116,33 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 	snprintf(savepath, sizeof(savepath), "%s/%s", dir, filename);
 
 	if (stat(dir, &sb) == -1) {
-		dief("stat failed: %s", strerror(errno));
+		switch (errno) {
+			case ENOENT:
+				dief("directory does not exist: %s", dir);
+				break;
+			case EACCES:
+				dief("permission denied: %s", dir);
+				break;
+			default:
+				dief("stat failed: %s", strerror(errno));
+				break;
+		}
 	}
 
 	if (!S_ISDIR(sb.st_mode)) {
-		dief("%s is not a directory", dir);
+		dief("not a directory: %s", dir);
 	}
 
 	if (NULL == (file = fopen(savepath, "wb"))) {
-		dief("fopen failed: %s", strerror(errno));
+		switch (errno) {
+			case EACCES:
+				dief("permission denied: %s", savepath);
+				break;
+			default:
+				dief("fopen failed: %s", strerror(errno));
+				break;
+
+		}
 	}
 
 	fprintf(file, "P6\n%hu %hu 255\n", width, height);

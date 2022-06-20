@@ -28,6 +28,7 @@
 */
 
 #include <errno.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -85,6 +86,7 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 	uint8_t *pixels, pixel[3];
 	int pixel_index, pixel_count;
 	const struct tm *now;
+	struct stat sb;
 	char filename[SCREENSHOT_FILENAME_LENGTH], savepath[1024];
 
 	width = screen->width_in_pixels;
@@ -112,6 +114,14 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 
 	strftime(filename, sizeof(filename), SCREENSHOT_FILENAME_FORMAT, now);
 	snprintf(savepath, sizeof(savepath), "%s/%s", dir, filename);
+
+	if (stat(dir, &sb) == -1) {
+		dief("stat failed: %s", strerror(errno));
+	}
+
+	if (!S_ISDIR(sb.st_mode)) {
+		dief("%s is not a directory", dir);
+	}
 
 	if (NULL == (file = fopen(savepath, "wb"))) {
 		dief("fopen failed: %s", strerror(errno));

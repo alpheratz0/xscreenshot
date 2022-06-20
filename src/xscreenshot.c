@@ -78,15 +78,17 @@ static void
 screenshot(xcb_connection_t *connection, xcb_screen_t *screen, const char *dir)
 {
 	FILE *file;
+	uint16_t width, height;
+	xcb_generic_error_t *error;
 	xcb_get_image_cookie_t cookie;
 	xcb_get_image_reply_t *reply;
-	xcb_generic_error_t *error;
-	char filename[SCREENSHOT_FILENAME_LENGTH], savepath[1024];
-	uint32_t width, height;
 	uint8_t *pixels, pixel[3];
+	int pixel_index, pixel_count;
+	const struct tm *now;
+	char filename[SCREENSHOT_FILENAME_LENGTH], savepath[1024];
 
-	width = (uint32_t)(screen->width_in_pixels);
-	height = (uint32_t)(screen->height_in_pixels);
+	width = screen->width_in_pixels;
+	height = screen->height_in_pixels;
 	error = NULL;
 
 	cookie = xcb_get_image(
@@ -103,26 +105,28 @@ screenshot(xcb_connection_t *connection, xcb_screen_t *screen, const char *dir)
 	}
 
 	pixels = xcb_get_image_data(reply);
+	pixel_index = 0;
+	pixel_count = xcb_get_image_data_length(reply) / sizeof(uint32_t);
 
-	strftime(
-		filename, sizeof(filename), SCREENSHOT_FILENAME_FORMAT,
-		localtime((const time_t[1]) { time(NULL) })
-	);
+	now = localtime((const time_t[1]) { time(NULL) });
 
+	strftime(filename, sizeof(filename), SCREENSHOT_FILENAME_FORMAT, now);
 	snprintf(savepath, sizeof(savepath), "%s/%s", dir, filename);
 
 	if (NULL == (file = fopen(savepath, "wb"))) {
 		dief("fopen failed: %s", strerror(errno));
 	}
 
-	fprintf(file, "P6\n%u %u 255\n", width, height);
+	fprintf(file, "P6\n%hu %hu 255\n", width, height);
 
-	for (uint32_t i = 0; i < width * height; ++i) {
-		pixel[0] = pixels[i*4+2];
-		pixel[1] = pixels[i*4+1];
-		pixel[2] = pixels[i*4];
+	while (pixel_index < pixel_count) {
+		pixel[0] = pixels[pixel_index*4+2];
+		pixel[1] = pixels[pixel_index*4+1];
+		pixel[2] = pixels[pixel_index*4];
 
 		fwrite(pixel, sizeof(pixel[0]), sizeof(pixel), file);
+
+		pixel_index++;
 	}
 
 	fclose(file);

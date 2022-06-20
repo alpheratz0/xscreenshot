@@ -29,19 +29,21 @@
 
 #include <errno.h>
 #include <sys/stat.h>
+#include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 
 #include "debug.h"
 
-#define SCREENSHOT_FILENAME_FORMAT ("%Y%m%d%H%M%S.ppm")
-#define SCREENSHOT_FILENAME_LENGTH (sizeof("20220612093950.ppm"))
+#define SCREENSHOT_DATE_FORMAT ("%Y%m%d%H%M%S")
+#define SCREENSHOT_DATE_LENGTH (sizeof("20220612093950"))
 #define XCB_PLANES_ALL_PLANES ((uint32_t)(~0UL))
 
 static bool
@@ -87,7 +89,8 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 	int pixel_index, pixel_count;
 	const struct tm *now;
 	struct stat sb;
-	char filename[SCREENSHOT_FILENAME_LENGTH], savepath[1024];
+	char date[SCREENSHOT_DATE_LENGTH];
+	char path[PATH_MAX];
 
 	width = screen->width_in_pixels;
 	height = screen->height_in_pixels;
@@ -112,8 +115,8 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 
 	now = localtime((const time_t[1]) { time(NULL) });
 
-	strftime(filename, sizeof(filename), SCREENSHOT_FILENAME_FORMAT, now);
-	snprintf(savepath, sizeof(savepath), "%s/%s", dir, filename);
+	strftime(date, SCREENSHOT_DATE_LENGTH, SCREENSHOT_DATE_FORMAT, now);
+	snprintf(path, PATH_MAX, "%s/%s_%d.ppm", dir, date, getpid() % 10);
 
 	if (stat(dir, &sb) == -1) {
 		switch (errno) {
@@ -133,10 +136,10 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 		dief("not a directory: %s", dir);
 	}
 
-	if (NULL == (file = fopen(savepath, "wb"))) {
+	if (NULL == (file = fopen(path, "wb"))) {
 		switch (errno) {
 			case EACCES:
-				dief("permission denied: %s", savepath);
+				dief("permission denied: %s", path);
 				break;
 			default:
 				dief("fopen failed: %s", strerror(errno));

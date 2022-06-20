@@ -1,4 +1,4 @@
-VERSION = 0.1.2-rev+${shell git rev-parse --short=16 HEAD}
+VERSION = 1.0.0-rev+${shell git rev-parse --short=16 HEAD}
 PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/share/man
 LDLIBS = -lxcb

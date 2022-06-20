@@ -41,6 +41,7 @@
 
 #define SCREENSHOT_FILENAME_FORMAT ("%Y%m%d%H%M%S.ppm")
 #define SCREENSHOT_FILENAME_LENGTH (sizeof("20220612093950.ppm"))
+#define XCB_PLANES_ALL_PLANES ((uint32_t)(~0UL))
 
 static bool
 match_opt(const char *in, const char *sh, const char *lo)
@@ -91,7 +92,7 @@ screenshot(xcb_connection_t *connection, xcb_screen_t *screen, const char *dir)
 	cookie = xcb_get_image(
 		connection, XCB_IMAGE_FORMAT_Z_PIXMAP,
 		screen->root, 0, 0, width, height,
-		(uint32_t)(~0UL)
+		XCB_PLANES_ALL_PLANES
 	);
 
 	reply = xcb_get_image_reply(connection, cookie, &error);

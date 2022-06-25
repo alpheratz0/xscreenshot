@@ -84,7 +84,7 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 	xcb_get_image_cookie_t cookie;
 	xcb_get_image_reply_t *reply;
 	uint8_t *pixels, pixel[3];
-	int pixel_index, pixel_count;
+	int i, npixels;
 	const struct tm *now;
 	struct stat sb;
 	char date[SCREENSHOT_DATE_LENGTH];
@@ -108,8 +108,7 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 	}
 
 	pixels = xcb_get_image_data(reply);
-	pixel_index = 0;
-	pixel_count = xcb_get_image_data_length(reply) / sizeof(uint32_t);
+	npixels = xcb_get_image_data_length(reply) / sizeof(uint32_t);
 
 	now = localtime((const time_t[1]) { time(NULL) });
 
@@ -147,14 +146,12 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 
 	fprintf(file, "P6\n%hu %hu 255\n", width, height);
 
-	while (pixel_index < pixel_count) {
-		pixel[0] = pixels[pixel_index*4+2];
-		pixel[1] = pixels[pixel_index*4+1];
-		pixel[2] = pixels[pixel_index*4];
+	for (i = 0; i < npixels; ++i) {
+		pixel[0] = pixels[i*4+2];
+		pixel[1] = pixels[i*4+1];
+		pixel[2] = pixels[i*4+0];
 
 		fwrite(pixel, sizeof(pixel[0]), sizeof(pixel), file);
-
-		pixel_index++;
 	}
 
 	fclose(file);
@@ -171,12 +168,13 @@ main(int argc, char **argv)
 	if (++argv, --argc > 0) {
 		if (match_opt(*argv, "-h", "--help")) usage();
 		else if (match_opt(*argv, "-v", "--version")) version();
-		else if (match_opt(*argv, "-d", "--directory")) {
-			if (--argc > 0) dir = *++argv;
-			else die("expected a directory");
-		}
+		else if (match_opt(*argv, "-d", "--directory")) dir = *++argv;
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);
+	}
+
+	if (NULL == dir) {
+		die("expected a directory");
 	}
 
 	if (xcb_connection_has_error(conn = xcb_connect(NULL, NULL))) {

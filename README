@@ -1,12 +1,16 @@
-xscreenshot
-===========
-simple X11 program that takes a screenshot and saves it as a ppm.
+]|~ xscreenshot ~|[
 
-build
-=====
-in order to build xscreenshot you will need xcb headers
+An attempt to make a simple X11 program that takes a screenshot
+and saves it as a ppm on the specified directory (if any).
+
+]|~ build ~|[
+
+In order to build xscreenshot you will need xcb headers.
 $ make
 
-install
-=======
-# make install
+]|~ license ~|[
+
+This program is free software; you can redistribute it
+and/or modify it under the terms of the GNU General Public License
+version 2 as published by the Free Software Foundation.
+See LICENSE for more details.

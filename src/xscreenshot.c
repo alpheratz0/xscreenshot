@@ -32,7 +32,6 @@
 #include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
@@ -46,11 +45,10 @@
 #define SCREENSHOT_DATE_LENGTH (sizeof("20220612093950"))
 #define XCB_PLANES_ALL_PLANES ((uint32_t)(~0UL))
 
-static bool
+static int
 match_opt(const char *in, const char *sh, const char *lo)
 {
-	return (strcmp(in, sh) == 0) ||
-		   (strcmp(in, lo) == 0);
+	return (strcmp(in, sh) == 0) || (strcmp(in, lo) == 0);
 }
 
 static inline void
@@ -118,17 +116,17 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 	strftime(date, SCREENSHOT_DATE_LENGTH, SCREENSHOT_DATE_FORMAT, now);
 	snprintf(path, PATH_MAX, "%s/%s_%d.ppm", dir, date, getpid() % 10);
 
-	if (stat(dir, &sb) == -1) {
+	if (stat(dir, &sb) < 0) {
 		switch (errno) {
-			case ENOENT:
-				dief("directory does not exist: %s", dir);
-				break;
-			case EACCES:
-				dief("permission denied: %s", dir);
-				break;
-			default:
-				dief("stat failed: %s", strerror(errno));
-				break;
+		case ENOENT:
+			dief("directory does not exist: %s", dir);
+			break;
+		case EACCES:
+			dief("permission denied: %s", dir);
+			break;
+		default:
+			dief("stat failed: %s", strerror(errno));
+			break;
 		}
 	}
 
@@ -138,13 +136,12 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 
 	if (NULL == (file = fopen(path, "wb"))) {
 		switch (errno) {
-			case EACCES:
-				dief("permission denied: %s", path);
-				break;
-			default:
-				dief("fopen failed: %s", strerror(errno));
-				break;
-
+		case EACCES:
+			dief("permission denied: %s", path);
+			break;
+		default:
+			dief("fopen failed: %s", strerror(errno));
+			break;
 		}
 	}
 

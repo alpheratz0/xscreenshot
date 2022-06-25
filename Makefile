@@ -1,10 +1,10 @@
-VERSION = 1.0.0-rev+${shell git rev-parse --short=16 HEAD}
+VERSION = 0.1.0
 PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/share/man
 LDLIBS = -lxcb
 LDFLAGS = -s ${LDLIBS}
 INCS = -I/usr/include
-CFLAGS = -std=c99 -pedantic -Wall -Wextra -Os ${INCS} -DVERSION="\"${VERSION}\""
+CFLAGS = -std=c99 -pedantic -Wall -Wextra -Os ${INCS} -DVERSION=\"${VERSION}\"
 CC = cc
 
 SRC = xscreenshot.c

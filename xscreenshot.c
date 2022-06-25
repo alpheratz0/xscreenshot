@@ -181,7 +181,7 @@ main(int argc, char **argv)
 {
 	xcb_connection_t *conn;
 	xcb_screen_t *screen;
-	char *dir = ".";
+	const char *dir = ".";
 
 	if (++argv, --argc > 0) {
 		if (match_opt(*argv, "-h", "--help")) usage();

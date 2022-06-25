@@ -7,14 +7,14 @@ INCS = -I/usr/include
 CFLAGS = -std=c99 -pedantic -Wall -Wextra -Os ${INCS} -DVERSION="\"${VERSION}\""
 CC = cc
 
-SRC = src/xscreenshot.c \
-	  src/debug.c
+SRC = xscreenshot.c
 
 OBJ = ${SRC:.c=.o}
 
 all: xscreenshot
 
-${OBJ}:	src/debug.h
+.c.o:
+	${CC} -c $< ${CFLAGS}
 
 xscreenshot: ${OBJ}
 	${CC} -o $@ ${OBJ} ${LDFLAGS}
@@ -24,12 +24,12 @@ install: all
 	cp -f xscreenshot ${DESTDIR}${PREFIX}/bin
 	chmod 755 ${DESTDIR}${PREFIX}/bin/xscreenshot
 	mkdir -p ${DESTDIR}${MANPREFIX}/man1
-	cp -f man/xscreenshot.1 ${DESTDIR}${MANPREFIX}/man1
+	cp -f xscreenshot.1 ${DESTDIR}${MANPREFIX}/man1
 	chmod 644 ${DESTDIR}${MANPREFIX}/man1/xscreenshot.1
 
 dist: clean
 	mkdir -p xscreenshot-${VERSION}
-	cp -R LICENSE Makefile README man src xscreenshot-${VERSION}
+	cp -R LICENSE Makefile README xscreenshot.1 xscreenshot.c xscreenshot-${VERSION}
 	tar -cf xscreenshot-${VERSION}.tar xscreenshot-${VERSION}
 	gzip xscreenshot-${VERSION}.tar
 	rm -rf xscreenshot-${VERSION}

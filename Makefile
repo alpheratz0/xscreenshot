@@ -10,7 +10,6 @@ CC = cc
 SRC = src/xscreenshot.c \
 	  src/debug.c
 
-
 OBJ = ${SRC:.c=.o}
 
 all: xscreenshot

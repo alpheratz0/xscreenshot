@@ -27,9 +27,10 @@
 
 */
 
+#define _POSIX_C_SOURCE 1
+
 #include <errno.h>
-#include <sys/stat.h>
-#include <linux/limits.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -37,6 +38,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 

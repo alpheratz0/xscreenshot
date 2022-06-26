@@ -8,16 +8,13 @@ LDFLAGS = -s ${LDLIBS}
 PREFIX    = /usr/local
 MANPREFIX = ${PREFIX}/share/man
 
-SRC = xscreenshot.c
-OBJ = xscreenshot.o
-
 all: xscreenshot
 
 .c.o:
 	${CC} -c $< ${CFLAGS}
 
-xscreenshot: ${OBJ}
-	${CC} -o $@ ${OBJ} ${LDFLAGS}
+xscreenshot: xscreenshot.o
+	${CC} -o $@ $< ${LDFLAGS}
 
 install: all
 	mkdir -p ${DESTDIR}${PREFIX}/bin
@@ -39,6 +36,6 @@ uninstall:
 	rm -f ${DESTDIR}${MANPREFIX}/man1/xscreenshot.1
 
 clean:
-	rm -f xscreenshot xscreenshot-${VERSION}.tar.gz ${OBJ}
+	rm -f xscreenshot xscreenshot.o xscreenshot-${VERSION}.tar.gz
 
 .PHONY: all clean install uninstall dist

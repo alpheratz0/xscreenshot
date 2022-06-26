@@ -103,6 +103,7 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 	xcb_get_image_reply_t *reply;
 	uint8_t *pixels, pixel[3];
 	int i, npixels;
+	time_t t;
 	const struct tm *now;
 	struct stat sb;
 	char date[SCREENSHOT_DATE_LENGTH];
@@ -128,7 +129,8 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 	pixels = xcb_get_image_data(reply);
 	npixels = xcb_get_image_data_length(reply) / sizeof(uint32_t);
 
-	now = localtime((const time_t[1]) { time(NULL) });
+	t = time(NULL);
+	now = localtime(&t);
 
 	strftime(date, SCREENSHOT_DATE_LENGTH, SCREENSHOT_DATE_FORMAT, now);
 	snprintf(path, PATH_MAX, "%s/%s_%d.ppm", dir, date, getpid() % 10);

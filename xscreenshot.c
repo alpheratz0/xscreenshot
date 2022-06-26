@@ -169,7 +169,11 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 		pixel[1] = pixels[i*4+1];
 		pixel[2] = pixels[i*4+0];
 
-		fwrite(pixel, sizeof(pixel[0]), sizeof(pixel), file);
+		fwrite(
+			pixel, sizeof(pixel[0]),
+			sizeof(pixel) / sizeof(pixel[0]),
+			file
+		);
 	}
 
 	fclose(file);

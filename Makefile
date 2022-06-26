@@ -1,15 +1,15 @@
 VERSION = 0.1.0
-PREFIX = /usr/local
-MANPREFIX = ${PREFIX}/share/man
-LDLIBS = -lxcb
+
+CC      = cc
+CFLAGS  = -std=c99 -pedantic -Wall -Wextra -Os -DVERSION=\"${VERSION}\"
+LDLIBS  = -lxcb
 LDFLAGS = -s ${LDLIBS}
-INCS = -I/usr/include
-CFLAGS = -std=c99 -pedantic -Wall -Wextra -Os ${INCS} -DVERSION=\"${VERSION}\"
-CC = cc
+
+PREFIX    = /usr/local
+MANPREFIX = ${PREFIX}/share/man
 
 SRC = xscreenshot.c
-
-OBJ = ${SRC:.c=.o}
+OBJ = xscreenshot.o
 
 all: xscreenshot
 

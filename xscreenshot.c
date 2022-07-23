@@ -104,7 +104,7 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 	xcb_get_image_cookie_t cookie;
 	xcb_get_image_reply_t *reply;
 	uint8_t *pixels, pixel[3];
-	int i, npixels;
+	int i, spixels, bpp, npixels;
 	time_t t;
 	const struct tm *now;
 	struct stat sb;
@@ -129,8 +129,14 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 	}
 
 	pixels = xcb_get_image_data(reply);
-	npixels = xcb_get_image_data_length(reply) / sizeof(uint32_t);
+	spixels = xcb_get_image_data_length(reply);
+	bpp = (spixels * 8) / (width * height);
 
+	if (bpp != 32) {
+		dief("invalid pixel format received, expected: 32bpp got: %dbpp", bpp);
+	}
+
+	npixels = spixels / sizeof(uint32_t);
 	t = time(NULL);
 	now = localtime(&t);
 

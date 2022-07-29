@@ -28,6 +28,7 @@
 */
 
 #define _POSIX_C_SOURCE 1
+#define _XOPEN_SOURCE 500
 
 #include <errno.h>
 #include <limits.h>
@@ -45,6 +46,8 @@
 #define SCREENSHOT_DATE_FORMAT ("%Y%m%d%H%M%S")
 #define SCREENSHOT_DATE_LENGTH (sizeof("20220612093950"))
 #define XCB_PLANES_ALL_PLANES ((uint32_t)(~0UL))
+
+static int print_file_name;
 
 static void
 die(const char *err)
@@ -84,6 +87,7 @@ usage(void)
 	puts("Options are:");
 	print_opt("-h", "--help", "display this message and exit");
 	print_opt("-v", "--version", "display the program version");
+	print_opt("-p", "--print", "print the screenshot path to stdout");
 	print_opt("-d", "--directory", "set the directory to save the screenshot");
 	exit(0);
 }
@@ -109,7 +113,7 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 	const struct tm *now;
 	struct stat sb;
 	char date[SCREENSHOT_DATE_LENGTH];
-	char path[PATH_MAX];
+	char path[PATH_MAX], abpath[PATH_MAX];
 
 	width = screen->width_in_pixels;
 	height = screen->height_in_pixels;
@@ -172,6 +176,10 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 		}
 	}
 
+	if (print_file_name) {
+		printf("%s\n", realpath(path, abpath) == NULL ? path : abpath);
+	}
+
 	fprintf(file, "P6\n%hu %hu 255\n", width, height);
 
 	for (i = 0; i < npixels; ++i) {
@@ -197,15 +205,16 @@ main(int argc, char **argv)
 	xcb_screen_t *screen;
 	const char *dir = ".";
 
-	if (++argv, --argc > 0) {
+	while (++argv, --argc > 0) {
 		if (match_opt(*argv, "-h", "--help")) usage();
 		else if (match_opt(*argv, "-v", "--version")) version();
-		else if (match_opt(*argv, "-d", "--directory")) dir = *++argv;
+		else if (match_opt(*argv, "-p", "--print")) print_file_name = 1;
+		else if (match_opt(*argv, "-d", "--directory")) --argc, dir = *++argv;
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);
 	}
 
-	if (NULL == dir) {
+	if (NULL == dir || dir[0] == '-') {
 		die("expected a directory");
 	}
 

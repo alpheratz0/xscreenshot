@@ -49,7 +49,7 @@
 
 enum {
 	FLAG_PRINT_FILE_NAME,
-	FLAG_WRITE_TO_STDOUT,
+	FLAG_WRITE_PPM_TO_STDOUT,
 	FLAG_COUNT
 };
 
@@ -148,7 +148,7 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 		dief("invalid pixel format received, expected: 32bpp got: %dbpp", bpp);
 	}
 
-	if (flags[FLAG_WRITE_TO_STDOUT]) {
+	if (flags[FLAG_WRITE_PPM_TO_STDOUT]) {
 		file = stdout;
 		goto write_ppm;
 	}
@@ -207,7 +207,7 @@ write_ppm:
 		);
 	}
 
-	if (!flags[FLAG_WRITE_TO_STDOUT]) {
+	if (!flags[FLAG_WRITE_PPM_TO_STDOUT]) {
 		fclose(file);
 	}
 
@@ -225,7 +225,7 @@ main(int argc, char **argv)
 		if (match_opt(*argv, "-h", "--help")) usage();
 		else if (match_opt(*argv, "-v", "--version")) version();
 		else if (match_opt(*argv, "-p", "--print")) flags[FLAG_PRINT_FILE_NAME] = 1;
-		else if (match_opt(*argv, "-s", "--stdout")) flags[FLAG_WRITE_TO_STDOUT] = 1;
+		else if (match_opt(*argv, "-s", "--stdout")) flags[FLAG_WRITE_PPM_TO_STDOUT] = 1;
 		else if (match_opt(*argv, "-d", "--directory")) --argc, dir = *++argv;
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);

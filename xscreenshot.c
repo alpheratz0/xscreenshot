@@ -48,6 +48,12 @@
 #define XCB_PLANES_ALL_PLANES ((uint32_t)(~0UL))
 
 enum {
+	CHANNEL_RED,
+	CHANNEL_GREEN,
+	CHANNEL_BLUE
+};
+
+enum {
 	FLAG_PRINT_FILE_NAME,
 	FLAG_WRITE_PPM_TO_STDOUT,
 	FLAG_COUNT
@@ -111,17 +117,20 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 {
 	FILE *fp;
 	uint16_t width, height;
+	const xcb_setup_t *setup;
 	xcb_generic_error_t *error;
 	xcb_get_image_cookie_t cookie;
 	xcb_get_image_reply_t *reply;
 	uint8_t *pixels, pixel[3];
 	int i, spixels, bpp, npixels;
+	int channel_pos[3];
 	time_t t;
 	const struct tm *now;
 	struct stat sb;
 	char date[SCREENSHOT_DATE_LENGTH];
 	char path[PATH_MAX], abpath[PATH_MAX];
 
+	setup = xcb_get_setup(conn);
 	width = screen->width_in_pixels;
 	height = screen->height_in_pixels;
 	error = NULL;
@@ -195,10 +204,19 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 write_ppm:
 	fprintf(fp, "P6\n%hu %hu 255\n", width, height);
 
+	/* setup->image_byte_order                                             */
+	/*     0 -> XCB_IMAGE_ORDER_LSB_FIRST (bgra) -> [ r:2, g: 1, b:0 ]     */
+	/*     1 -> XCB_IMAGE_ORDER_MSB_FIRST (argb) -> [ r:1, g: 2, b:3 ]     */
+	for (i = 0; i < 3; ++i) {
+		channel_pos[i] = setup->image_byte_order == XCB_IMAGE_ORDER_MSB_FIRST ?
+			i + 1 :
+			2 - i;
+	}
+
 	for (i = 0; i < npixels; ++i) {
-		pixel[0] = pixels[i*4+2];
-		pixel[1] = pixels[i*4+1];
-		pixel[2] = pixels[i*4+0];
+		pixel[CHANNEL_RED] = pixels[i*4+channel_pos[CHANNEL_RED]];
+		pixel[CHANNEL_GREEN] = pixels[i*4+channel_pos[CHANNEL_GREEN]];
+		pixel[CHANNEL_BLUE] = pixels[i*4+channel_pos[CHANNEL_BLUE]];
 
 		fwrite(
 			pixel, sizeof(pixel[0]),

@@ -109,7 +109,7 @@ version(void)
 static void
 screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 {
-	FILE *file;
+	FILE *fp;
 	uint16_t width, height;
 	xcb_generic_error_t *error;
 	xcb_get_image_cookie_t cookie;
@@ -149,7 +149,7 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 	}
 
 	if (flags[FLAG_WRITE_PPM_TO_STDOUT]) {
-		file = stdout;
+		fp = stdout;
 		goto write_ppm;
 	}
 
@@ -177,7 +177,7 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 		dief("not a directory: %s", dir);
 	}
 
-	if (NULL == (file = fopen(path, "wb"))) {
+	if (NULL == (fp = fopen(path, "wb"))) {
 		switch (errno) {
 			case EACCES:
 				dief("permission denied: %s", path);
@@ -193,7 +193,7 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 	}
 
 write_ppm:
-	fprintf(file, "P6\n%hu %hu 255\n", width, height);
+	fprintf(fp, "P6\n%hu %hu 255\n", width, height);
 
 	for (i = 0; i < npixels; ++i) {
 		pixel[0] = pixels[i*4+2];
@@ -203,12 +203,12 @@ write_ppm:
 		fwrite(
 			pixel, sizeof(pixel[0]),
 			sizeof(pixel) / sizeof(pixel[0]),
-			file
+			fp
 		);
 	}
 
 	if (!flags[FLAG_WRITE_PPM_TO_STDOUT]) {
-		fclose(file);
+		fclose(fp);
 	}
 
 	free(reply);

@@ -49,6 +49,7 @@
 
 enum {
 	FLAG_PRINT_FILE_NAME,
+	FLAG_WRITE_TO_STDOUT,
 	FLAG_COUNT
 };
 
@@ -88,11 +89,12 @@ print_opt(const char *sh, const char *lo, const char *desc)
 static void
 usage(void)
 {
-	puts("Usage: xscreenshot [ -hvp ] [ -d DIRECTORY ]");
+	puts("Usage: xscreenshot [ -hpsv ] [ -d DIRECTORY ]");
 	puts("Options are:");
 	print_opt("-h", "--help", "display this message and exit");
-	print_opt("-v", "--version", "display the program version");
 	print_opt("-p", "--print", "print the screenshot path to stdout");
+	print_opt("-v", "--version", "display the program version");
+	print_opt("-s", "--stdout", "write the .ppm data to stdout");
 	print_opt("-d", "--directory", "set the directory to save the screenshot");
 	exit(0);
 }
@@ -139,13 +141,18 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 
 	pixels = xcb_get_image_data(reply);
 	spixels = xcb_get_image_data_length(reply);
+	npixels = spixels / sizeof(uint32_t);
 	bpp = (spixels * 8) / (width * height);
 
 	if (bpp != 32) {
 		dief("invalid pixel format received, expected: 32bpp got: %dbpp", bpp);
 	}
 
-	npixels = spixels / sizeof(uint32_t);
+	if (flags[FLAG_WRITE_TO_STDOUT]) {
+		file = stdout;
+		goto write_ppm;
+	}
+
 	t = time(NULL);
 	now = localtime(&t);
 
@@ -185,6 +192,7 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 		printf("%s\n", realpath(path, abpath) == NULL ? path : abpath);
 	}
 
+write_ppm:
 	fprintf(file, "P6\n%hu %hu 255\n", width, height);
 
 	for (i = 0; i < npixels; ++i) {
@@ -199,7 +207,10 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 		);
 	}
 
-	fclose(file);
+	if (!flags[FLAG_WRITE_TO_STDOUT]) {
+		fclose(file);
+	}
+
 	free(reply);
 }
 
@@ -214,6 +225,7 @@ main(int argc, char **argv)
 		if (match_opt(*argv, "-h", "--help")) usage();
 		else if (match_opt(*argv, "-v", "--version")) version();
 		else if (match_opt(*argv, "-p", "--print")) flags[FLAG_PRINT_FILE_NAME] = 1;
+		else if (match_opt(*argv, "-s", "--stdout")) flags[FLAG_WRITE_TO_STDOUT] = 1;
 		else if (match_opt(*argv, "-d", "--directory")) --argc, dir = *++argv;
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);

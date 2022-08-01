@@ -47,7 +47,12 @@
 #define SCREENSHOT_DATE_LENGTH (sizeof("20220612093950"))
 #define XCB_PLANES_ALL_PLANES ((uint32_t)(~0UL))
 
-static int print_file_name;
+enum {
+	FLAG_PRINT_FILE_NAME,
+	FLAG_COUNT
+};
+
+static int flags[FLAG_COUNT];
 
 static void
 die(const char *err)
@@ -176,7 +181,7 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 		}
 	}
 
-	if (print_file_name) {
+	if (flags[FLAG_PRINT_FILE_NAME]) {
 		printf("%s\n", realpath(path, abpath) == NULL ? path : abpath);
 	}
 
@@ -208,7 +213,7 @@ main(int argc, char **argv)
 	while (++argv, --argc > 0) {
 		if (match_opt(*argv, "-h", "--help")) usage();
 		else if (match_opt(*argv, "-v", "--version")) version();
-		else if (match_opt(*argv, "-p", "--print")) print_file_name = 1;
+		else if (match_opt(*argv, "-p", "--print")) flags[FLAG_PRINT_FILE_NAME] = 1;
 		else if (match_opt(*argv, "-d", "--directory")) --argc, dir = *++argv;
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);

@@ -1,44 +1,32 @@
-.TH XSCREENSHOT 1 "August 1, 2022"
-.SH NAME
-xscreenshot \- simple X11 program that takes a screenshot and saves it as a ppm in the specified directory (if any).
-.SH SYNOPSIS
-\fBxscreenshot\fP [ -hpsv ] [ -d DIRECTORY ]
-.SH OPTIONS
-.TP
-\fB\-h\fR, \fB\-\-help\fR
-show the help message and exit
-.TP
-\fB\-v\fR, \fB\-\-version\fR
-display the program version
-.TP
-\fB\-s\fR, \fB\-\-stdout\fR
-write the .ppm data to stdout
-.TP
-\fB\-p\fR, \fB\-\-print\fR
+.Dd August 1, 2022
+.Dt XSCREENSHOT 1
+.Sh NAME
+.Nm xscreenshot
+.Nd screenshot utility for X
+.Sh SYNOPSIS
+.Nm
+.Op Fl hpsv
+.Op Fl d Ar DIRECTORY
+.Sh DESCRIPTION
+The
+.Nm
+utility lets you take a screenshot and save it as a ppm.
+.Sh OPTIONS
+.Bl -tag -width indent
+.It Fl h, -help
+show usage
+.It Fl p, -print
 print the screenshot path to stdout
-.TP
-\fB\-d\fR, \fB\-\-directory\fR
+.It Fl s, -stdout
+write the .ppm data to stdout
+.It Fl v, -version
+display the program version
+.It Fl d, -directory
 set the directory to save the screenshot
-.SH EXAMPLE
-.TP
-\fBtake a screenshot and save it to the screenshot directory\fR
-xscreenshot -d "$HOME/.screenshots"
-.SH EXIT STATUS
-.TP
-\fB0\fR
-a screenshot has been taken
-.TP
-\fB1\fR
-an error occurred
-.SH AUTHOR
-Written by alpheratz0.
-.SH COPYRIGHT
-Copyright \(co 2022 <alpheratz99@protonmail.com>
-.br
-License GPLv2.0: GNU GPL version 2.0 <https://gnu.org/licenses/old-licenses/gpl-2.0.en.html>.
-.br
-This is free software: you are free to change and redistribute it.
-.br
-There is NO WARRANTY, to the extent permitted by law.
-.SH BUGS
+.El
+.Sh SEE ALSO
+.Xr apint 1
+.Sh AUTHORS
+.An alpheratz0 Aq Mt alpheratz99@protonmail.com
+.Sh BUGS
 https://github.com/alpheratz0/xscreenshot/issues

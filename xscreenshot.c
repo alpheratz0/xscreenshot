@@ -53,14 +53,6 @@ enum {
 	CHANNEL_BLUE
 };
 
-enum {
-	FLAG_PRINT_FILE_NAME,
-	FLAG_WRITE_PPM_TO_STDOUT,
-	FLAG_COUNT
-};
-
-static int flags[FLAG_COUNT];
-
 static void
 die(const char *err)
 {
@@ -89,7 +81,7 @@ match_opt(const char *in, const char *sh, const char *lo)
 static void
 usage(void)
 {
-	puts("usage: xscreenshot [-hpsv] [-d DIRECTORY]");
+	puts("usage: xscreenshot [-hpv] [-d DIRECTORY]");
 	exit(0);
 }
 
@@ -101,7 +93,8 @@ version(void)
 }
 
 static void
-screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
+screenshot(xcb_connection_t *conn, xcb_screen_t *screen,
+           const char *dir, int print_path)
 {
 	FILE *fp;
 	uint16_t width, height;
@@ -145,11 +138,6 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 		dief("invalid pixel format received, expected: 32bpp got: %dbpp", bpp);
 	}
 
-	if (flags[FLAG_WRITE_PPM_TO_STDOUT]) {
-		fp = stdout;
-		goto write_ppm;
-	}
-
 	t = time(NULL);
 	now = localtime(&t);
 
@@ -185,14 +173,13 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen, const char *dir)
 		}
 	}
 
-	if (flags[FLAG_PRINT_FILE_NAME]) {
+	if (print_path) {
 		printf("%s\n", realpath(path, abpath) == NULL ? path : abpath);
 	}
 
-write_ppm:
 	fprintf(fp, "P6\n%hu %hu 255\n", width, height);
 
-	/* setup->image_byte_order                                             */
+	/*                      setup->image_byte_order                        */
 	/*     0 -> XCB_IMAGE_ORDER_LSB_FIRST (bgra) -> [ r:2, g: 1, b:0 ]     */
 	/*     1 -> XCB_IMAGE_ORDER_MSB_FIRST (argb) -> [ r:1, g: 2, b:3 ]     */
 	for (i = 0; i < 3; ++i) {
@@ -213,10 +200,7 @@ write_ppm:
 		);
 	}
 
-	if (!flags[FLAG_WRITE_PPM_TO_STDOUT]) {
-		fclose(fp);
-	}
-
+	fclose(fp);
 	free(reply);
 }
 
@@ -226,12 +210,12 @@ main(int argc, char **argv)
 	xcb_connection_t *conn;
 	xcb_screen_t *screen;
 	const char *dir = ".";
+	int print_path = 0;
 
 	while (++argv, --argc > 0) {
 		if (match_opt(*argv, "-h", "--help")) usage();
 		else if (match_opt(*argv, "-v", "--version")) version();
-		else if (match_opt(*argv, "-p", "--print")) flags[FLAG_PRINT_FILE_NAME] = 1;
-		else if (match_opt(*argv, "-s", "--stdout")) flags[FLAG_WRITE_PPM_TO_STDOUT] = 1;
+		else if (match_opt(*argv, "-p", "--print")) print_path = 1;
 		else if (match_opt(*argv, "-d", "--directory")) --argc, dir = *++argv;
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);
@@ -250,7 +234,7 @@ main(int argc, char **argv)
 		die("can't get default screen");
 	}
 
-	screenshot(conn, screen, dir);
+	screenshot(conn, screen, dir, print_path);
 	xcb_disconnect(conn);
 
 	return 0;

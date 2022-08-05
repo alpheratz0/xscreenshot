@@ -1,4 +1,4 @@
-.Dd August 1, 2022
+.Dd August 5, 2022
 .Dt XSCREENSHOT 1
 .Sh NAME
 .Nm xscreenshot
@@ -21,6 +21,11 @@ print the screenshot path to stdout
 display the program version
 .It Fl d, -directory
 set the directory to save the screenshot
+.El
+.Sh EXAMPLES
+.Bl -tag -width indent
+.It use apint to draw over a freshly taken screenshot
+apint -f -l $(xscreenshot -p -d $(mktemp -d))
 .El
 .Sh SEE ALSO
 .Xr X 7

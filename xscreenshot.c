@@ -82,7 +82,7 @@ match_opt(const char *in, const char *sh, const char *lo)
 static void
 usage(void)
 {
-	puts("usage: xscreenshot [-hpv] [-d DIRECTORY]");
+	puts("usage: xscreenshot [-hpv] [-d directory]");
 	exit(0);
 }
 

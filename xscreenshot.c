@@ -73,12 +73,6 @@ dief(const char *fmt, ...)
 	exit(1);
 }
 
-static int
-match_opt(const char *in, const char *sh, const char *lo)
-{
-	return (strcmp(in, sh) == 0) || (strcmp(in, lo) == 0);
-}
-
 static void
 usage(void)
 {
@@ -214,10 +208,10 @@ main(int argc, char **argv)
 	int print_path = 0;
 
 	while (++argv, --argc > 0) {
-		if (match_opt(*argv, "-h", "--help")) usage();
-		else if (match_opt(*argv, "-v", "--version")) version();
-		else if (match_opt(*argv, "-p", "--print")) print_path = 1;
-		else if (match_opt(*argv, "-d", "--directory")) --argc, dir = *++argv;
+		if (!strcmp(*argv, "-h")) usage();
+		else if (!strcmp(*argv, "-v")) version();
+		else if (!strcmp(*argv, "-p")) print_path = 1;
+		else if (!strcmp(*argv, "-d")) --argc, dir = *++argv;
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);
 	}

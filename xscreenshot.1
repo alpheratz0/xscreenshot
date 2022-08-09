@@ -1,4 +1,4 @@
-.Dd August 8, 2022
+.Dd August 9, 2022
 .Dt XSCREENSHOT 1
 .Sh NAME
 .Nm xscreenshot
@@ -24,6 +24,8 @@ set the directory to save the screenshot
 .El
 .Sh EXAMPLES
 .Bl -tag -width indent
+.It take a screenshot and save it under ~/.screenshots
+xscreenshot -d ~/.screenshots
 .It use apint to draw over a freshly taken screenshot
 apint -f -l $(xscreenshot -p -d $(mktemp -d))
 .El

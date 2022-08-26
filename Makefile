@@ -29,7 +29,7 @@ install: all
 
 dist: clean
 	mkdir -p xscreenshot-$(VERSION)
-	cp -R LICENSE Makefile README xscreenshot.1 xscreenshot.c xscreenshot-$(VERSION)
+	cp -R COPYING Makefile README xscreenshot.1 xscreenshot.c xscreenshot-$(VERSION)
 	tar -cf xscreenshot-$(VERSION).tar xscreenshot-$(VERSION)
 	gzip xscreenshot-$(VERSION).tar
 	rm -rf xscreenshot-$(VERSION)

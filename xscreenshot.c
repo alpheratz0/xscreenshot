@@ -74,10 +74,20 @@ dief(const char *fmt, ...)
 	exit(1);
 }
 
+static const char *
+enotnull(const char *str, const char *name)
+{
+	if (NULL == str) {
+		dief("%s cannot be null", name);
+	}
+
+	return str;
+}
+
 static void
 usage(void)
 {
-	puts("usage: xscreenshot [-hpv] [-d directory]");
+	puts("usage: xscreenshot [-hpv] [-d directory] [-w id]");
 	exit(0);
 }
 
@@ -88,8 +98,57 @@ version(void)
 	exit(0);
 }
 
+static int
+parse_window_id(const char *s, xcb_window_t *id)
+{
+	const char *cur;
+	xcb_window_t rid;
+
+	rid = 0;
+	cur = s;
+
+	if (*cur++ != '0' || *cur++ != 'x' || *cur == '\0') {
+		return -1;
+	}
+
+	while (*cur) {
+		if (*cur >= '0' && *cur <= '9') rid = rid * 16 + *cur - '0';
+		else if (*cur >= 'a' && *cur <= 'f') rid = rid * 16 + *cur - 'a' + 10;
+		else if (*cur >= 'A' && *cur <= 'F') rid = rid * 16 + *cur - 'A' + 10;
+		else return -1;
+		++cur;
+	}
+
+	*id = rid;
+
+	return 0;
+}
+
 static void
-screenshot(xcb_connection_t *conn, xcb_screen_t *screen,
+get_window_size(xcb_connection_t *conn, xcb_window_t window,
+                uint16_t *width, uint16_t *height)
+{
+	xcb_generic_error_t *error;
+	xcb_get_geometry_cookie_t cookie;
+	xcb_get_geometry_reply_t *reply;
+
+	error = NULL;
+	cookie = xcb_get_geometry(conn, window);
+	reply = xcb_get_geometry_reply(conn, cookie, &error);
+
+	if (NULL != error) {
+		dief("xcb_get_geometry failed with error code: %d",
+				(int)(error->error_code));
+	}
+
+	*width = reply->width;
+	*height = reply->height;
+
+	free(reply);
+}
+
+static void
+screenshot(xcb_connection_t *conn, xcb_window_t window,
            const char *dir, bool print_path)
 {
 	FILE *fp;
@@ -107,14 +166,14 @@ screenshot(xcb_connection_t *conn, xcb_screen_t *screen,
 	char date[SCREENSHOT_DATE_LENGTH];
 	char path[PATH_MAX], abpath[PATH_MAX];
 
+	get_window_size(conn, window, &width, &height);
+
 	setup = xcb_get_setup(conn);
-	width = screen->width_in_pixels;
-	height = screen->height_in_pixels;
 	error = NULL;
 
 	cookie = xcb_get_image(
 		conn, XCB_IMAGE_FORMAT_Z_PIXMAP,
-		screen->root, 0, 0, width, height,
+		window, 0, 0, width, height,
 		XCB_PLANES_ALL_PLANES
 	);
 
@@ -205,7 +264,9 @@ main(int argc, char **argv)
 {
 	xcb_connection_t *conn;
 	xcb_screen_t *screen;
+	xcb_window_t wid;
 	const char *dir = ".";
+	const char *swid = NULL;
 	bool print_path = false;
 
 	while (++argv, --argc > 0) {
@@ -213,6 +274,7 @@ main(int argc, char **argv)
 		else if (!strcmp(*argv, "-v")) version();
 		else if (!strcmp(*argv, "-p")) print_path = true;
 		else if (!strcmp(*argv, "-d")) --argc, dir = *++argv;
+		else if (!strcmp(*argv, "-w")) --argc, swid = enotnull(*++argv, "id");
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);
 	}
@@ -225,12 +287,18 @@ main(int argc, char **argv)
 		die("can't open display");
 	}
 
-	if (NULL == (screen = xcb_setup_roots_iterator(xcb_get_setup(conn)).data)) {
+	if (NULL == swid) {
+		if (NULL == (screen = xcb_setup_roots_iterator(xcb_get_setup(conn)).data)) {
+			xcb_disconnect(conn);
+			die("can't get default screen");
+		}
+		wid = screen->root;
+	} else if (parse_window_id(swid, &wid) < 0) {
 		xcb_disconnect(conn);
-		die("can't get default screen");
+		die("invalid window id format");
 	}
 
-	screenshot(conn, screen, dir, print_path);
+	screenshot(conn, wid, dir, print_path);
 	xcb_disconnect(conn);
 
 	return 0;

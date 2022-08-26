@@ -1,4 +1,4 @@
-.Dd August 9, 2022
+.Dd August 26, 2022
 .Dt XSCREENSHOT 1
 .Sh NAME
 .Nm xscreenshot
@@ -7,6 +7,7 @@
 .Nm
 .Op Fl hpv
 .Op Fl d Ar directory
+.Op Fl w Ar id
 .Sh DESCRIPTION
 The
 .Nm
@@ -21,9 +22,13 @@ print the screenshot path to stdout
 display the program version
 .It Fl d
 set the directory to save the screenshot
+.It Fl w
+screenshot a specific window
 .El
 .Sh EXAMPLES
 .Bl -tag -width indent
+.It take a screenshot of a specific window
+xscreenshot -w $(xwininfo | awk '/Window id:/{print $4}')
 .It take a screenshot and save it under ~/.screenshots
 xscreenshot -d ~/.screenshots
 .It use apint to draw over a freshly taken screenshot

@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
@@ -89,7 +90,7 @@ version(void)
 
 static void
 screenshot(xcb_connection_t *conn, xcb_screen_t *screen,
-           const char *dir, int print_path)
+           const char *dir, bool print_path)
 {
 	FILE *fp;
 	uint16_t width, height;
@@ -205,12 +206,12 @@ main(int argc, char **argv)
 	xcb_connection_t *conn;
 	xcb_screen_t *screen;
 	const char *dir = ".";
-	int print_path = 0;
+	bool print_path = false;
 
 	while (++argv, --argc > 0) {
 		if (!strcmp(*argv, "-h")) usage();
 		else if (!strcmp(*argv, "-v")) version();
-		else if (!strcmp(*argv, "-p")) print_path = 1;
+		else if (!strcmp(*argv, "-p")) print_path = true;
 		else if (!strcmp(*argv, "-d")) --argc, dir = *++argv;
 		else if (**argv == '-') dief("invalid option %s", *argv);
 		else dief("unexpected argument: %s", *argv);

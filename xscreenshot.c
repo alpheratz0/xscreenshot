@@ -101,25 +101,23 @@ version(void)
 static int
 parse_window_id(const char *s, xcb_window_t *id)
 {
-	const char *cur;
-	xcb_window_t rid;
+	xcb_window_t o;
 
-	rid = 0;
-	cur = s;
+	o = 0;
 
-	if (*cur++ != '0' || *cur++ != 'x' || *cur == '\0') {
+	if (*s++ != '0' || *s++ != 'x' || *s == '\0') {
 		return -1;
 	}
 
-	while (*cur) {
-		if (*cur >= '0' && *cur <= '9') rid = rid * 16 + *cur - '0';
-		else if (*cur >= 'a' && *cur <= 'f') rid = rid * 16 + *cur - 'a' + 10;
-		else if (*cur >= 'A' && *cur <= 'F') rid = rid * 16 + *cur - 'A' + 10;
+	while (*s) {
+		if (*s >= '0' && *s <= '9') o = o * 16 + *s - '0';
+		else if (*s >= 'a' && *s <= 'f') o = o * 16 + *s - 'a' + 10;
+		else if (*s >= 'A' && *s <= 'F') o = o * 16 + *s - 'A' + 10;
 		else return -1;
-		++cur;
+		++s;
 	}
 
-	*id = rid;
+	*id = o;
 
 	return 0;
 }

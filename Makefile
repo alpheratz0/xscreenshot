@@ -1,15 +1,7 @@
 .POSIX:
 .PHONY: all clean install uninstall dist
 
-VERSION = 0.1.1
-
-CC      = cc
-CFLAGS  = -std=c99 -pedantic -Wall -Wextra -Os -DVERSION=\"$(VERSION)\"
-LDLIBS  = -lxcb
-LDFLAGS = -s
-
-PREFIX    = /usr/local
-MANPREFIX = $(PREFIX)/share/man
+include config.mk
 
 all: xscreenshot
 

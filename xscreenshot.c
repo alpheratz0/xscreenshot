@@ -129,7 +129,6 @@ get_window_size(xcb_connection_t *conn, xcb_window_t window,
 	xcb_get_geometry_cookie_t cookie;
 	xcb_get_geometry_reply_t *reply;
 
-	error = NULL;
 	cookie = xcb_get_geometry(conn, window);
 	reply = xcb_get_geometry_reply(conn, cookie, &error);
 
@@ -165,7 +164,6 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	get_window_size(conn, window, &width, &height);
 
 	setup = xcb_get_setup(conn);
-	error = NULL;
 
 	cookie = xcb_get_image(
 		conn, XCB_IMAGE_FORMAT_Z_PIXMAP,

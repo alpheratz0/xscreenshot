@@ -79,10 +79,8 @@ dief(const char *fmt, ...)
 static const char *
 enotnull(const char *str, const char *name)
 {
-	if (NULL == str) {
+	if (NULL == str)
 		dief("%s cannot be null", name);
-	}
-
 	return str;
 }
 
@@ -107,9 +105,8 @@ parse_window_id(const char *s, xcb_window_t *id)
 
 	o = 0;
 
-	if (*s++ != '0' || *s++ != 'x' || *s == '\0') {
+	if (*s++ != '0' || *s++ != 'x' || *s == '\0')
 		return -1;
-	}
 
 	while (*s) {
 		if (*s >= '0' && *s <= '9') o = o * 16 + *s - '0';
@@ -136,10 +133,9 @@ get_window_size(xcb_connection_t *conn, xcb_window_t window,
 	cookie = xcb_get_geometry(conn, window);
 	reply = xcb_get_geometry_reply(conn, cookie, &error);
 
-	if (NULL != error) {
+	if (NULL != error)
 		dief("xcb_get_geometry failed with error code: %d",
 				(int)(error->error_code));
-	}
 
 	*width = reply->width;
 	*height = reply->height;
@@ -179,19 +175,17 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 
 	reply = xcb_get_image_reply(conn, cookie, &error);
 
-	if (NULL != error) {
+	if (NULL != error)
 		dief("xcb_get_image failed with error code: %d",
 				(int)(error->error_code));
-	}
 
 	pixels = xcb_get_image_data(reply);
 	spixels = xcb_get_image_data_length(reply);
 	npixels = spixels / sizeof(uint32_t);
 	bpp = (spixels * 8) / (width * height);
 
-	if (bpp != 32) {
+	if (bpp != 32)
 		dief("invalid pixel format received, expected: 32bpp got: %dbpp", bpp);
-	}
 
 	t = time(NULL);
 	now = localtime(&t);
@@ -213,9 +207,8 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 		}
 	}
 
-	if (!S_ISDIR(sb.st_mode)) {
+	if (!S_ISDIR(sb.st_mode))
 		dief("not a directory: %s", dir);
-	}
 
 	if (NULL == (fp = fopen(path, "wb"))) {
 		switch (errno) {
@@ -228,9 +221,8 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 		}
 	}
 
-	if (print_path) {
+	if (print_path)
 		printf("%s\n", realpath(path, abpath) == NULL ? path : abpath);
-	}
 
 	fprintf(fp, "P6\n%hu %hu 255\n", width, height);
 
@@ -238,9 +230,10 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	/*     0 -> XCB_IMAGE_ORDER_LSB_FIRST (bgra) -> [ r:2, g: 1, b:0 ]     */
 	/*     1 -> XCB_IMAGE_ORDER_MSB_FIRST (argb) -> [ r:1, g: 2, b:3 ]     */
 	for (i = 0; i < 3; ++i) {
-		channel_pos[i] = setup->image_byte_order == XCB_IMAGE_ORDER_MSB_FIRST ?
-			i + 1 :
-			2 - i;
+		switch (setup->image_byte_order) {
+			case XCB_IMAGE_ORDER_MSB_FIRST: channel_pos[i] = i + 1; break;
+			case XCB_IMAGE_ORDER_LSB_FIRST: channel_pos[i] = 2 - i; break;
+		}
 	}
 
 	for (i = 0; i < npixels; ++i) {
@@ -248,11 +241,7 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 		pixel[CHANNEL_GREEN] = pixels[i*4+channel_pos[CHANNEL_GREEN]];
 		pixel[CHANNEL_BLUE] = pixels[i*4+channel_pos[CHANNEL_BLUE]];
 
-		fwrite(
-			pixel, sizeof(pixel[0]),
-			sizeof(pixel) / sizeof(pixel[0]),
-			fp
-		);
+		fwrite(pixel, sizeof(pixel[0]), sizeof(pixel) / sizeof(pixel[0]), fp);
 	}
 
 	fclose(fp);
@@ -279,13 +268,11 @@ main(int argc, char **argv)
 		else dief("unexpected argument: %s", *argv);
 	}
 
-	if (NULL == dir || dir[0] == '-') {
+	if (NULL == dir || dir[0] == '-')
 		die("expected a directory");
-	}
 
-	if (xcb_connection_has_error(conn = xcb_connect(NULL, NULL))) {
+	if (xcb_connection_has_error(conn = xcb_connect(NULL, NULL)))
 		die("can't open display");
-	}
 
 	if (NULL == swid) {
 		if (NULL == (screen = xcb_setup_roots_iterator(xcb_get_setup(conn)).data)) {

@@ -3,7 +3,10 @@
 
 include config.mk
 
-all: xscreenshot
+all: config.h xscreenshot
+
+config.h: config.def.h
+	cp config.def.h config.h
 
 xscreenshot: xscreenshot.o
 	$(CC) $(LDFLAGS) -o xscreenshot xscreenshot.o $(LDLIBS)

@@ -3,10 +3,7 @@
 
 include config.mk
 
-all: config.h xscreenshot
-
-config.h: config.def.h
-	cp config.def.h config.h
+all: xscreenshot
 
 xscreenshot: xscreenshot.o
 	$(CC) $(LDFLAGS) -o xscreenshot xscreenshot.o $(LDLIBS)
@@ -24,7 +21,7 @@ install: all
 
 dist: clean
 	mkdir -p xscreenshot-$(VERSION)
-	cp -R COPYING config.mk Makefile README config.def.h xscreenshot.1 \
+	cp -R COPYING config.mk Makefile README config.h xscreenshot.1 \
 		xscreenshot.c xscreenshot-$(VERSION)
 	tar -cf xscreenshot-$(VERSION).tar xscreenshot-$(VERSION)
 	gzip xscreenshot-$(VERSION).tar

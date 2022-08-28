@@ -120,24 +120,44 @@ parse_window_id(const char *s, xcb_window_t *id)
 }
 
 static void
-get_window_size(xcb_connection_t *conn, xcb_window_t window,
-                uint16_t *width, uint16_t *height)
+get_window_info(xcb_connection_t *conn, xcb_window_t window,
+                int16_t *x, int16_t *y, uint16_t *width, uint16_t *height,
+				xcb_window_t *root)
 {
 	xcb_generic_error_t *error;
-	xcb_get_geometry_cookie_t cookie;
-	xcb_get_geometry_reply_t *reply;
 
-	cookie = xcb_get_geometry(conn, window);
-	reply = xcb_get_geometry_reply(conn, cookie, &error);
+	xcb_get_geometry_cookie_t gg_cookie;
+	xcb_get_geometry_reply_t *gg_reply;
+
+	xcb_translate_coordinates_cookie_t tc_cookie;
+	xcb_translate_coordinates_reply_t *tc_reply;
+
+	gg_cookie = xcb_get_geometry(conn, window);
+	gg_reply = xcb_get_geometry_reply(conn, gg_cookie, &error);
 
 	if (NULL != error)
 		dief("xcb_get_geometry failed with error code: %d",
 				(int)(error->error_code));
 
-	*width = reply->width;
-	*height = reply->height;
+	*width = gg_reply->width;
+	*height = gg_reply->height;
+	*root = gg_reply->root;
 
-	free(reply);
+	tc_cookie = xcb_translate_coordinates(
+		conn, window, gg_reply->root, gg_reply->x, gg_reply->y
+	);
+
+	tc_reply = xcb_translate_coordinates_reply(conn, tc_cookie, &error);
+
+	if (NULL != error)
+		dief("xcb_translate_coordinates failed with error code: %d",
+				(int)(error->error_code));
+
+	*x = tc_reply->dst_x;
+	*y = tc_reply->dst_y;
+
+	free(gg_reply);
+	free(tc_reply);
 }
 
 static void
@@ -145,7 +165,9 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
            const char *dir, bool print_path)
 {
 	FILE *fp;
+	int16_t x, y;
 	uint16_t width, height;
+	xcb_window_t root;
 	const xcb_setup_t *setup;
 	xcb_generic_error_t *error;
 	xcb_get_image_cookie_t cookie;
@@ -159,13 +181,13 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	char date[SCREENSHOT_DATE_LENGTH];
 	char path[PATH_MAX], abpath[PATH_MAX];
 
-	get_window_size(conn, window, &width, &height);
+	get_window_info(conn, window, &x, &y, &width, &height, &root);
 
 	setup = xcb_get_setup(conn);
 
 	cookie = xcb_get_image(
 		conn, XCB_IMAGE_FORMAT_Z_PIXMAP,
-		window, 0, 0, width, height,
+		root, x, y, width, height,
 		XCB_PLANES_ALL_PLANES
 	);
 

@@ -44,8 +44,6 @@
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
 
-#include "config.h"
-
 #define SCREENSHOT_DATE_FORMAT ("%Y%m%d%H%M%S")
 #define SCREENSHOT_DATE_LENGTH (sizeof("20220612093950"))
 #define XCB_PLANES_ALL_PLANES ((uint32_t)(~0UL))
@@ -252,7 +250,7 @@ main(int argc, char **argv)
 	xcb_connection_t *conn;
 	xcb_screen_t *screen;
 	xcb_window_t wid;
-	const char *dir = default_dir;
+	const char *dir = ".";
 	const char *swid = NULL;
 	bool print_path = false;
 

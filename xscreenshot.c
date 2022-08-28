@@ -143,10 +143,7 @@ get_window_info(xcb_connection_t *conn, xcb_window_t window,
 	*height = gg_reply->height;
 	*root = gg_reply->root;
 
-	tc_cookie = xcb_translate_coordinates(
-		conn, window, gg_reply->root, gg_reply->x, gg_reply->y
-	);
-
+	tc_cookie = xcb_translate_coordinates(conn, window, *root, 0, 0);
 	tc_reply = xcb_translate_coordinates_reply(conn, tc_cookie, &error);
 
 	if (NULL != error)

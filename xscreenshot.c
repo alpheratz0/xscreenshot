@@ -122,39 +122,40 @@ parse_window_id(const char *s, xcb_window_t *id)
 static void
 get_window_info(xcb_connection_t *conn, xcb_window_t window,
                 int16_t *x, int16_t *y, uint16_t *width, uint16_t *height,
-				xcb_window_t *root)
+                xcb_window_t *root)
 {
 	xcb_generic_error_t *error;
+	xcb_get_geometry_cookie_t ggc;
+	xcb_get_geometry_reply_t *ggr;
+	xcb_translate_coordinates_cookie_t tcc;
+	xcb_translate_coordinates_reply_t *tcr;
 
-	xcb_get_geometry_cookie_t gg_cookie;
-	xcb_get_geometry_reply_t *gg_reply;
-
-	xcb_translate_coordinates_cookie_t tc_cookie;
-	xcb_translate_coordinates_reply_t *tc_reply;
-
-	gg_cookie = xcb_get_geometry(conn, window);
-	gg_reply = xcb_get_geometry_reply(conn, gg_cookie, &error);
+	ggc = xcb_get_geometry(conn, window);
+	ggr = xcb_get_geometry_reply(conn, ggc, &error);
 
 	if (NULL != error)
 		dief("xcb_get_geometry failed with error code: %d",
 				(int)(error->error_code));
 
-	*width = gg_reply->width;
-	*height = gg_reply->height;
-	*root = gg_reply->root;
-
-	tc_cookie = xcb_translate_coordinates(conn, window, *root, 0, 0);
-	tc_reply = xcb_translate_coordinates_reply(conn, tc_cookie, &error);
+	/* the returned position by xcb_get_geometry is relative to the */
+	/* parent window, the parent window isn't necessarily the root window */
+	/* so we need to translate the top left coordinate of the window */
+	/* to a coordinate relative to the root window */
+	tcc = xcb_translate_coordinates(conn, window, ggr->root, 0, 0);
+	tcr = xcb_translate_coordinates_reply(conn, tcc, &error);
 
 	if (NULL != error)
 		dief("xcb_translate_coordinates failed with error code: %d",
 				(int)(error->error_code));
 
-	*x = tc_reply->dst_x;
-	*y = tc_reply->dst_y;
+	*x = tcr->dst_x;
+	*y = tcr->dst_y;
+	*width = ggr->width;
+	*height = ggr->height;
+	*root = ggr->root;
 
-	free(gg_reply);
-	free(tc_reply);
+	free(ggr);
+	free(tcr);
 }
 
 static void

@@ -125,10 +125,28 @@ get_window_info(xcb_connection_t *conn, xcb_window_t window,
                 xcb_window_t *root)
 {
 	xcb_generic_error_t *error;
+	xcb_get_window_attributes_cookie_t gwac;
+	xcb_get_window_attributes_reply_t *gwar;
 	xcb_get_geometry_cookie_t ggc;
 	xcb_get_geometry_reply_t *ggr;
 	xcb_translate_coordinates_cookie_t tcc;
 	xcb_translate_coordinates_reply_t *tcr;
+
+	gwac = xcb_get_window_attributes(conn, window);
+	gwar = xcb_get_window_attributes_reply(conn, gwac, &error);
+
+	if (NULL != error && error->error_code == XCB_WINDOW)
+		dief("the specified window does not exists");
+
+	if (NULL != error)
+		dief("xcb_get_window_attributes failed with error code: %d",
+				(int)(error->error_code));
+
+	if (gwar->_class != XCB_WINDOW_CLASS_INPUT_OUTPUT)
+		die("the specified window is not an input/output window");
+
+	if (gwar->map_state != XCB_MAP_STATE_VIEWABLE)
+		die("the specified window is not viewable/mapped");
 
 	ggc = xcb_get_geometry(conn, window);
 	ggr = xcb_get_geometry_reply(conn, ggc, &error);
@@ -154,6 +172,7 @@ get_window_info(xcb_connection_t *conn, xcb_window_t window,
 	*height = ggr->height;
 	*root = ggr->root;
 
+	free(gwar);
 	free(ggr);
 	free(tcr);
 }

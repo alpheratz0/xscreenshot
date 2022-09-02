@@ -146,7 +146,7 @@ get_window_info(xcb_connection_t *conn, xcb_window_t window,
 		die("the specified window is not an input/output window");
 
 	if (gwar->map_state != XCB_MAP_STATE_VIEWABLE)
-		die("the specified window is not viewable/mapped");
+		die("the specified window is not visible/mapped");
 
 	ggc = xcb_get_geometry(conn, window);
 	ggr = xcb_get_geometry_reply(conn, ggc, &error);

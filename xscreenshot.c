@@ -136,7 +136,7 @@ get_window_info(xcb_connection_t *conn, xcb_window_t window,
 	gwar = xcb_get_window_attributes_reply(conn, gwac, &error);
 
 	if (NULL != error && error->error_code == XCB_WINDOW)
-		dief("the specified window does not exists");
+		die("the specified window does not exist");
 
 	if (NULL != error)
 		dief("xcb_get_window_attributes failed with error code: %d",

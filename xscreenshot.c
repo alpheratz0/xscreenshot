@@ -259,7 +259,7 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	if (print_path)
 		printf("%s\n", realpath(path, abpath) == NULL ? path : abpath);
 
-	fprintf(fp, "P6\n%hu %hu 255\n", width, height);
+	fprintf(fp, "P6\n%hu %hu\n255\n", width, height);
 
 	/*                      setup->image_byte_order                        */
 	/*     0 -> XCB_IMAGE_ORDER_LSB_FIRST (bgra) -> [ r:2, g: 1, b:0 ]     */

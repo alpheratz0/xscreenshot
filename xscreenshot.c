@@ -48,12 +48,6 @@
 #define SCREENSHOT_DATE_LENGTH (sizeof("20220612093950"))
 #define XCB_PLANES_ALL_PLANES ((uint32_t)(~0UL))
 
-enum {
-	CHANNEL_RED,
-	CHANNEL_GREEN,
-	CHANNEL_BLUE
-};
-
 static void
 die(const char *err)
 {
@@ -191,7 +185,7 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	xcb_get_image_reply_t *reply;
 	uint8_t *pixels, pixel[3];
 	int i, spixels, bpp, npixels;
-	int channel_pos[3];
+	int choff[3];
 	time_t t;
 	const struct tm *now;
 	struct stat sb;
@@ -266,15 +260,15 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	/*     1 -> XCB_IMAGE_ORDER_MSB_FIRST (argb) -> [ r:1, g: 2, b:3 ]     */
 	for (i = 0; i < 3; ++i) {
 		switch (setup->image_byte_order) {
-			case XCB_IMAGE_ORDER_MSB_FIRST: channel_pos[i] = i + 1; break;
-			case XCB_IMAGE_ORDER_LSB_FIRST: channel_pos[i] = 2 - i; break;
+			case XCB_IMAGE_ORDER_MSB_FIRST: choff[i] = i + 1; break;
+			case XCB_IMAGE_ORDER_LSB_FIRST: choff[i] = 2 - i; break;
 		}
 	}
 
 	for (i = 0; i < npixels; ++i) {
-		pixel[CHANNEL_RED] = pixels[i*4+channel_pos[CHANNEL_RED]];
-		pixel[CHANNEL_GREEN] = pixels[i*4+channel_pos[CHANNEL_GREEN]];
-		pixel[CHANNEL_BLUE] = pixels[i*4+channel_pos[CHANNEL_BLUE]];
+		pixel[0] = pixels[i*4+choff[0]];
+		pixel[1] = pixels[i*4+choff[1]];
+		pixel[2] = pixels[i*4+choff[2]];
 
 		fwrite(pixel, sizeof(pixel[0]), sizeof(pixel) / sizeof(pixel[0]), fp);
 	}
@@ -289,22 +283,27 @@ main(int argc, char **argv)
 	xcb_connection_t *conn;
 	xcb_screen_t *screen;
 	xcb_window_t wid;
-	const char *dir = ".";
-	const char *swid = NULL;
-	bool print_path = false;
+	const char *dir, *swid;
+	bool print_path;
+
+	dir = ".";
+	swid = NULL;
+	print_path = false;
 
 	while (++argv, --argc > 0) {
-		if (!strcmp(*argv, "-h")) usage();
-		else if (!strcmp(*argv, "-v")) version();
-		else if (!strcmp(*argv, "-p")) print_path = true;
-		else if (!strcmp(*argv, "-d")) --argc, dir = *++argv;
-		else if (!strcmp(*argv, "-w")) --argc, swid = enotnull(*++argv, "id");
-		else if (**argv == '-') dief("invalid option %s", *argv);
-		else dief("unexpected argument: %s", *argv);
+		if ((*argv)[0] == '-' && (*argv)[1] != '\0' && (*argv)[2] == '\0') {
+			switch ((*argv)[1]) {
+				case 'h': usage(); break;
+				case 'v': version(); break;
+				case 'p': print_path = true; break;
+				case 'd': --argc; dir = enotnull(*++argv, "directory"); break;
+				case 'w': --argc; swid = enotnull(*++argv, "id"); break;
+				default: dief("invalid option %s", *argv); break;
+			}
+		} else {
+			dief("unexpected argument: %s", *argv);
+		}
 	}
-
-	if (NULL == dir || dir[0] == '-')
-		die("expected a directory");
 
 	if (xcb_connection_has_error(conn = xcb_connect(NULL, NULL)))
 		die("can't open display");

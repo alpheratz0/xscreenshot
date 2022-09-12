@@ -1,7 +1,7 @@
 # Copyright (C) 2022 <alpheratz99@protonmail.com>
 # This program is free software.
 
-VERSION   = 0.1.1
+VERSION   = 0.2.0
 
 CC        = cc
 INCS      = -I/usr/X11R6/include

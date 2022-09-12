@@ -174,6 +174,35 @@ get_window_info(xcb_connection_t *conn, xcb_window_t window,
 }
 
 static void
+get_focused_window_root(xcb_connection_t *conn, xcb_window_t *window)
+{
+	xcb_generic_error_t *error;
+	xcb_get_input_focus_cookie_t gifc;
+	xcb_get_input_focus_reply_t *gifr;
+	xcb_get_geometry_cookie_t ggc;
+	xcb_get_geometry_reply_t *ggr;
+
+	gifc = xcb_get_input_focus(conn);
+	gifr = xcb_get_input_focus_reply(conn, gifc, &error);
+
+	if (NULL != error)
+		dief("xcb_get_input_focus failed with error code: %d",
+				(int)(error->error_code));
+
+	ggc = xcb_get_geometry(conn, gifr->focus);
+	ggr = xcb_get_geometry_reply(conn, ggc, &error);
+
+	if (NULL != error)
+		dief("xcb_get_geometry failed with error code: %d",
+				(int)(error->error_code));
+
+	*window = ggr->root;
+
+	free(gifr);
+	free(ggr);
+}
+
+static void
 screenshot(xcb_connection_t *conn, xcb_window_t window,
            const char *dir, bool print_path)
 {
@@ -286,7 +315,6 @@ int
 main(int argc, char **argv)
 {
 	xcb_connection_t *conn;
-	xcb_screen_t *screen;
 	xcb_window_t wid;
 	const char *dir, *swid;
 	bool print_path;
@@ -314,11 +342,7 @@ main(int argc, char **argv)
 		die("can't open display");
 
 	if (NULL == swid) {
-		if (NULL == (screen = xcb_setup_roots_iterator(xcb_get_setup(conn)).data)) {
-			xcb_disconnect(conn);
-			die("can't get default screen");
-		}
-		wid = screen->root;
+		get_focused_window_root(conn, &wid);
 	} else if (parse_window_id(swid, &wid) < 0) {
 		xcb_disconnect(conn);
 		die("invalid window id format");

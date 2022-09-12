@@ -124,7 +124,7 @@ get_window_info(xcb_connection_t *conn, xcb_window_t window,
 	xcb_get_window_attributes_cookie_t gwac;
 	xcb_get_window_attributes_reply_t *gwar;
 	xcb_get_geometry_cookie_t ggc;
-	xcb_get_geometry_reply_t *ggr;
+	xcb_get_geometry_reply_t *ggr, *rggr;
 	xcb_translate_coordinates_cookie_t tcc;
 	xcb_translate_coordinates_reply_t *tcr;
 
@@ -168,8 +168,24 @@ get_window_info(xcb_connection_t *conn, xcb_window_t window,
 	*height = ggr->height;
 	*root = ggr->root;
 
+	/* obtain the root window geometry and adjust the rect */
+	/* of the target window to make it that every point inside */
+	/* that rect is inside the root window rect */
+	ggc = xcb_get_geometry(conn, ggr->root);
+	rggr = xcb_get_geometry_reply(conn, ggc, &error);
+
+	if (NULL != error)
+		dief("xcb_get_geometry failed with error code: %d",
+				(int)(error->error_code));
+
+	if (*x < 0) *width += *x, *x = 0;
+	if (*y < 0) *height += *y, *y = 0;
+	if (*x + *width > rggr->width) *width = rggr->width - *x;
+	if (*y + *height > rggr->height) *height = rggr->height - *y;
+
 	free(gwar);
 	free(ggr);
+	free(rggr);
 	free(tcr);
 }
 

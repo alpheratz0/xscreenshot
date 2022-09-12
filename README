@@ -1,7 +1,7 @@
 ]|~ xscreenshot ~|[
 
 An attempt to make a simple X11 program that takes a screenshot
-and saves it as a ppm in the specified directory (if any).
+and saves it as a png in the specified directory (if any).
 
 ]|~ build ~|[
 

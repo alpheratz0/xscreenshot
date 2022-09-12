@@ -5,7 +5,7 @@ and saves it as a png in the specified directory (if any).
 
 ]|~ build ~|[
 
-In order to build xscreenshot you will need xcb headers.
+In order to build xscreenshot you will need xcb and png headers.
 $ make
 
 ]|~ license ~|[

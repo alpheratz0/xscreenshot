@@ -186,8 +186,7 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	xcb_get_image_cookie_t cookie;
 	xcb_get_image_reply_t *reply;
 	uint8_t *pixels;
-	int i, spixels, bpp;
-	int choff[3];
+	int bpp, choff[3];
 	time_t t;
 	const struct tm *now;
 	struct stat sb;
@@ -214,8 +213,7 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 				(int)(error->error_code));
 
 	pixels = xcb_get_image_data(reply);
-	spixels = xcb_get_image_data_length(reply);
-	bpp = (spixels * 8) / (width * height);
+	bpp = (xcb_get_image_data_length(reply) * 8) / (width * height);
 
 	if (bpp != 32)
 		dief("invalid pixel format received, expected: 32bpp got: %dbpp", bpp);
@@ -226,33 +224,14 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	strftime(date, SCREENSHOT_DATE_LENGTH, SCREENSHOT_DATE_FORMAT, now);
 	snprintf(path, PATH_MAX, "%s/%s_%d.png", dir, date, getpid() % 10);
 
-	if (stat(dir, &sb) < 0) {
-		switch (errno) {
-			case ENOENT:
-				dief("directory does not exist: %s", dir);
-				break;
-			case EACCES:
-				dief("permission denied: %s", dir);
-				break;
-			default:
-				dief("stat failed: %s", strerror(errno));
-				break;
-		}
-	}
+	if (stat(dir, &sb) < 0)
+		dief("stat failed: %s", strerror(errno));
 
 	if (!S_ISDIR(sb.st_mode))
 		dief("not a directory: %s", dir);
 
-	if (NULL == (fp = fopen(path, "wb"))) {
-		switch (errno) {
-			case EACCES:
-				dief("permission denied: %s", path);
-				break;
-			default:
-				dief("fopen failed: %s", strerror(errno));
-				break;
-		}
-	}
+	if (NULL == (fp = fopen(path, "wb")))
+		dief("fopen failed: %s", strerror(errno));
 
 	if (print_path)
 		printf("%s\n", realpath(path, abpath) == NULL ? path : abpath);
@@ -260,12 +239,10 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	/*                      setup->image_byte_order                        */
 	/*     0 -> XCB_IMAGE_ORDER_LSB_FIRST (bgra) -> [ r:2, g: 1, b:0 ]     */
 	/*     1 -> XCB_IMAGE_ORDER_MSB_FIRST (argb) -> [ r:1, g: 2, b:3 ]     */
-	for (i = 0; i < 3; ++i) {
-		switch (setup->image_byte_order) {
-			case XCB_IMAGE_ORDER_MSB_FIRST: choff[i] = i + 1; break;
-			case XCB_IMAGE_ORDER_LSB_FIRST: choff[i] = 2 - i; break;
-		}
-	}
+	if (setup->image_byte_order == XCB_IMAGE_ORDER_LSB_FIRST)
+		choff[0] = 2, choff[1] = 1, choff[2] = 0;
+	else /* XCB_IMAGE_ORDER_MSB_FIRST */
+		choff[0] = 1, choff[1] = 2, choff[2] = 3;
 
 	if (NULL == (png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
 		die("png_create_write_struct failed");

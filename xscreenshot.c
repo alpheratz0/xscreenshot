@@ -30,6 +30,7 @@
 #define _POSIX_C_SOURCE 1
 #define _XOPEN_SOURCE 500
 
+#include <png.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
@@ -38,6 +39,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <setjmp.h>
 #include <time.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -183,14 +185,17 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	xcb_generic_error_t *error;
 	xcb_get_image_cookie_t cookie;
 	xcb_get_image_reply_t *reply;
-	uint8_t *pixels, pixel[3];
-	int i, spixels, bpp, npixels;
+	uint8_t *pixels;
+	int i, spixels, bpp;
 	int choff[3];
 	time_t t;
 	const struct tm *now;
 	struct stat sb;
 	char date[SCREENSHOT_DATE_LENGTH];
 	char path[PATH_MAX], abpath[PATH_MAX];
+	png_struct *png;
+	png_info *pnginfo;
+	png_byte *row;
 
 	get_window_info(conn, window, &x, &y, &width, &height, &root);
 
@@ -210,7 +215,6 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 
 	pixels = xcb_get_image_data(reply);
 	spixels = xcb_get_image_data_length(reply);
-	npixels = spixels / sizeof(uint32_t);
 	bpp = (spixels * 8) / (width * height);
 
 	if (bpp != 32)
@@ -220,7 +224,7 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	now = localtime(&t);
 
 	strftime(date, SCREENSHOT_DATE_LENGTH, SCREENSHOT_DATE_FORMAT, now);
-	snprintf(path, PATH_MAX, "%s/%s_%d.ppm", dir, date, getpid() % 10);
+	snprintf(path, PATH_MAX, "%s/%s_%d.png", dir, date, getpid() % 10);
 
 	if (stat(dir, &sb) < 0) {
 		switch (errno) {
@@ -253,8 +257,6 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	if (print_path)
 		printf("%s\n", realpath(path, abpath) == NULL ? path : abpath);
 
-	fprintf(fp, "P6\n%hu %hu\n255\n", width, height);
-
 	/*                      setup->image_byte_order                        */
 	/*     0 -> XCB_IMAGE_ORDER_LSB_FIRST (bgra) -> [ r:2, g: 1, b:0 ]     */
 	/*     1 -> XCB_IMAGE_ORDER_MSB_FIRST (argb) -> [ r:1, g: 2, b:3 ]     */
@@ -265,15 +267,41 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 		}
 	}
 
-	for (i = 0; i < npixels; ++i) {
-		pixel[0] = pixels[i*4+choff[0]];
-		pixel[1] = pixels[i*4+choff[1]];
-		pixel[2] = pixels[i*4+choff[2]];
+	if (NULL == (png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
+		die("png_create_write_struct failed");
 
-		fwrite(pixel, sizeof(pixel[0]), sizeof(pixel) / sizeof(pixel[0]), fp);
+	if (NULL == (pnginfo = png_create_info_struct(png)))
+		die("png_create_info_struct failed");
+
+	if (setjmp(png_jmpbuf(png)) != 0)
+		die("aborting due to libpng error");
+
+	png_init_io(png, fp);
+
+	png_set_IHDR(
+		png, pnginfo, width, height, 8, PNG_COLOR_TYPE_RGB,
+		PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE
+	);
+
+	png_write_info(png, pnginfo);
+	png_set_compression_level(png, 3);
+
+	row = malloc(width * 3);
+
+	for (y = 0; y < height; ++y) {
+		for (x = 0; x < width; ++x) {
+			row[x*3+0] = pixels[4*(y*width+x)+choff[0]];
+			row[x*3+1] = pixels[4*(y*width+x)+choff[1]];
+			row[x*3+2] = pixels[4*(y*width+x)+choff[2]];
+		}
+		png_write_row(png, row);
 	}
 
+	png_write_end(png, NULL);
+	png_free_data(png, pnginfo, PNG_FREE_ALL, -1);
+	png_destroy_write_struct(&png, NULL);
 	fclose(fp);
+	free(row);
 	free(reply);
 }
 

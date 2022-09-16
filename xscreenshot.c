@@ -51,14 +51,7 @@
 #define XCB_PLANES_ALL_PLANES ((uint32_t)(~0UL))
 
 static void
-die(const char *err)
-{
-	fprintf(stderr, "xscreenshot: %s\n", err);
-	exit(1);
-}
-
-static void
-dief(const char *fmt, ...)
+die(const char *fmt, ...)
 {
 	va_list args;
 
@@ -74,7 +67,7 @@ static const char *
 enotnull(const char *str, const char *name)
 {
 	if (NULL == str)
-		dief("%s cannot be null", name);
+		die("%s cannot be null", name);
 	return str;
 }
 
@@ -135,7 +128,7 @@ get_window_info(xcb_connection_t *conn, xcb_window_t window,
 		die("the specified window does not exist");
 
 	if (NULL != error)
-		dief("xcb_get_window_attributes failed with error code: %d",
+		die("xcb_get_window_attributes failed with error code: %d",
 				(int)(error->error_code));
 
 	if (gwar->_class != XCB_WINDOW_CLASS_INPUT_OUTPUT)
@@ -148,7 +141,7 @@ get_window_info(xcb_connection_t *conn, xcb_window_t window,
 	ggr = xcb_get_geometry_reply(conn, ggc, &error);
 
 	if (NULL != error)
-		dief("xcb_get_geometry failed with error code: %d",
+		die("xcb_get_geometry failed with error code: %d",
 				(int)(error->error_code));
 
 	/* the returned position by xcb_get_geometry is relative to the */
@@ -159,7 +152,7 @@ get_window_info(xcb_connection_t *conn, xcb_window_t window,
 	tcr = xcb_translate_coordinates_reply(conn, tcc, &error);
 
 	if (NULL != error)
-		dief("xcb_translate_coordinates failed with error code: %d",
+		die("xcb_translate_coordinates failed with error code: %d",
 				(int)(error->error_code));
 
 	*x = tcr->dst_x;
@@ -175,7 +168,7 @@ get_window_info(xcb_connection_t *conn, xcb_window_t window,
 	rggr = xcb_get_geometry_reply(conn, ggc, &error);
 
 	if (NULL != error)
-		dief("xcb_get_geometry failed with error code: %d",
+		die("xcb_get_geometry failed with error code: %d",
 				(int)(error->error_code));
 
 	if (*x < 0) *width += *x, *x = 0;
@@ -202,14 +195,14 @@ get_focused_window_root(xcb_connection_t *conn, xcb_window_t *window)
 	gifr = xcb_get_input_focus_reply(conn, gifc, &error);
 
 	if (NULL != error)
-		dief("xcb_get_input_focus failed with error code: %d",
+		die("xcb_get_input_focus failed with error code: %d",
 				(int)(error->error_code));
 
 	ggc = xcb_get_geometry(conn, gifr->focus);
 	ggr = xcb_get_geometry_reply(conn, ggc, &error);
 
 	if (NULL != error)
-		dief("xcb_get_geometry failed with error code: %d",
+		die("xcb_get_geometry failed with error code: %d",
 				(int)(error->error_code));
 
 	*window = ggr->root;
@@ -254,14 +247,14 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	reply = xcb_get_image_reply(conn, cookie, &error);
 
 	if (NULL != error)
-		dief("xcb_get_image failed with error code: %d",
+		die("xcb_get_image failed with error code: %d",
 				(int)(error->error_code));
 
 	pixels = xcb_get_image_data(reply);
 	bpp = (xcb_get_image_data_length(reply) * 8) / (width * height);
 
 	if (bpp != 32)
-		dief("invalid pixel format received, expected: 32bpp got: %dbpp", bpp);
+		die("invalid pixel format received, expected: 32bpp got: %dbpp", bpp);
 
 	t = time(NULL);
 	now = localtime(&t);
@@ -270,13 +263,13 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	snprintf(path, PATH_MAX, "%s/%s_%d.png", dir, date, getpid() % 10);
 
 	if (stat(dir, &sb) < 0)
-		dief("stat failed: %s", strerror(errno));
+		die("stat failed: %s", strerror(errno));
 
 	if (!S_ISDIR(sb.st_mode))
-		dief("not a directory: %s", dir);
+		die("not a directory: %s", dir);
 
 	if (NULL == (fp = fopen(path, "wb")))
-		dief("fopen failed: %s", strerror(errno));
+		die("fopen failed: %s", strerror(errno));
 
 	if (print_path)
 		printf("%s\n", realpath(path, abpath) == NULL ? path : abpath);
@@ -347,10 +340,10 @@ main(int argc, char **argv)
 				case 'p': print_path = true; break;
 				case 'd': --argc; dir = enotnull(*++argv, "directory"); break;
 				case 'w': --argc; swid = enotnull(*++argv, "id"); break;
-				default: dief("invalid option %s", *argv); break;
+				default: die("invalid option %s", *argv); break;
 			}
 		} else {
-			dief("unexpected argument: %s", *argv);
+			die("unexpected argument: %s", *argv);
 		}
 	}
 

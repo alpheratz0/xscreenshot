@@ -128,8 +128,7 @@ get_window_info(xcb_connection_t *conn, xcb_window_t window,
 		die("the specified window does not exist");
 
 	if (NULL != error)
-		die("xcb_get_window_attributes failed with error code: %d",
-				(int)(error->error_code));
+		die("xcb_get_window_attributes failed with error code: %hhu", error->error_code);
 
 	if (gwar->_class != XCB_WINDOW_CLASS_INPUT_OUTPUT)
 		die("the specified window is not an input/output window");
@@ -141,8 +140,7 @@ get_window_info(xcb_connection_t *conn, xcb_window_t window,
 	ggr = xcb_get_geometry_reply(conn, ggc, &error);
 
 	if (NULL != error)
-		die("xcb_get_geometry failed with error code: %d",
-				(int)(error->error_code));
+		die("xcb_get_geometry failed with error code: %hhu", error->error_code);
 
 	/* the returned position by xcb_get_geometry is relative to the */
 	/* parent window, the parent window isn't necessarily the root window */
@@ -152,8 +150,7 @@ get_window_info(xcb_connection_t *conn, xcb_window_t window,
 	tcr = xcb_translate_coordinates_reply(conn, tcc, &error);
 
 	if (NULL != error)
-		die("xcb_translate_coordinates failed with error code: %d",
-				(int)(error->error_code));
+		die("xcb_translate_coordinates failed with error code: %hhu", error->error_code);
 
 	*x = tcr->dst_x;
 	*y = tcr->dst_y;
@@ -168,8 +165,7 @@ get_window_info(xcb_connection_t *conn, xcb_window_t window,
 	rggr = xcb_get_geometry_reply(conn, ggc, &error);
 
 	if (NULL != error)
-		die("xcb_get_geometry failed with error code: %d",
-				(int)(error->error_code));
+		die("xcb_get_geometry failed with error code: %hhu", error->error_code);
 
 	if (*x < 0) *width += *x, *x = 0;
 	if (*y < 0) *height += *y, *y = 0;
@@ -195,15 +191,13 @@ get_focused_window_root(xcb_connection_t *conn, xcb_window_t *window)
 	gifr = xcb_get_input_focus_reply(conn, gifc, &error);
 
 	if (NULL != error)
-		die("xcb_get_input_focus failed with error code: %d",
-				(int)(error->error_code));
+		die("xcb_get_input_focus failed with error code: %hhu", error->error_code);
 
 	ggc = xcb_get_geometry(conn, gifr->focus);
 	ggr = xcb_get_geometry_reply(conn, ggc, &error);
 
 	if (NULL != error)
-		die("xcb_get_geometry failed with error code: %d",
-				(int)(error->error_code));
+		die("xcb_get_geometry failed with error code: %hhu", error->error_code);
 
 	*window = ggr->root;
 
@@ -239,16 +233,14 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	setup = xcb_get_setup(conn);
 
 	cookie = xcb_get_image(
-		conn, XCB_IMAGE_FORMAT_Z_PIXMAP,
-		root, x, y, width, height,
-		XCB_PLANES_ALL_PLANES
+		conn, XCB_IMAGE_FORMAT_Z_PIXMAP, root, x, y,
+		width, height, XCB_PLANES_ALL_PLANES
 	);
 
 	reply = xcb_get_image_reply(conn, cookie, &error);
 
 	if (NULL != error)
-		die("xcb_get_image failed with error code: %d",
-				(int)(error->error_code));
+		die("xcb_get_image failed with error code: %hhu", error->error_code);
 
 	pixels = xcb_get_image_data(reply);
 	bpp = (xcb_get_image_data_length(reply) * 8) / (width * height);
@@ -277,10 +269,11 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	/*                      setup->image_byte_order                        */
 	/*     0 -> XCB_IMAGE_ORDER_LSB_FIRST (bgra) -> [ r:2, g: 1, b:0 ]     */
 	/*     1 -> XCB_IMAGE_ORDER_MSB_FIRST (argb) -> [ r:1, g: 2, b:3 ]     */
-	if (setup->image_byte_order == XCB_IMAGE_ORDER_LSB_FIRST)
-		choff[0] = 2, choff[1] = 1, choff[2] = 0;
-	else /* XCB_IMAGE_ORDER_MSB_FIRST */
-		choff[0] = 1, choff[1] = 2, choff[2] = 3;
+	if (setup->image_byte_order == XCB_IMAGE_ORDER_LSB_FIRST) {
+		choff[0] = 2; choff[1] = 1; choff[2] = 0;
+	} else if (setup->image_byte_order == XCB_IMAGE_ORDER_MSB_FIRST) {
+		choff[0] = 1; choff[1] = 2; choff[2] = 3;
+	}
 
 	if (NULL == (png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
 		die("png_create_write_struct failed");

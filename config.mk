@@ -6,7 +6,7 @@ VERSION   = 0.3.0
 CC        = cc
 INCS      = -I/usr/X11R6/include
 CFLAGS    = -std=c99 -pedantic -Wall -Wextra -Os $(INCS) -DVERSION=\"$(VERSION)\"
-LDLIBS    = -lxcb -lpng
+LDLIBS    = -lxcb -lpng -lxcb-xfixes
 LDFLAGS   = -L/usr/X11R6/lib -s
 
 PREFIX    = /usr/local

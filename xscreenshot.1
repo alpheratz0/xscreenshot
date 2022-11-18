@@ -1,11 +1,11 @@
-.Dd September 12, 2022
+.Dd November 18, 2022
 .Dt XSCREENSHOT 1
 .Sh NAME
 .Nm xscreenshot
 .Nd screenshot utility for X
 .Sh SYNOPSIS
 .Nm
-.Op Fl hpv
+.Op Fl chpv
 .Op Fl d Ar directory
 .Op Fl w Ar id
 .Sh DESCRIPTION
@@ -14,6 +14,8 @@ The
 utility lets you take a screenshot and save it as a png.
 .Sh OPTIONS
 .Bl -tag -width indent
+.It Fl c
+include the cursor in the screenshot
 .It Fl h
 show usage
 .It Fl p

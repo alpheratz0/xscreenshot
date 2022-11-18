@@ -45,6 +45,7 @@
 #include <sys/stat.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
+#include <xcb/xfixes.h>
 
 #define SCREENSHOT_DATE_FORMAT ("%Y%m%d%H%M%S")
 #define SCREENSHOT_DATE_LENGTH (sizeof("20220612093950"))
@@ -74,7 +75,7 @@ enotnull(const char *str, const char *name)
 static void
 usage(void)
 {
-	puts("usage: xscreenshot [-hpv] [-d directory] [-w id]");
+	puts("usage: xscreenshot [-chpv] [-d directory] [-w id]");
 	exit(0);
 }
 
@@ -207,7 +208,7 @@ get_focused_window_root(xcb_connection_t *conn, xcb_window_t *window)
 
 static void
 screenshot(xcb_connection_t *conn, xcb_window_t window,
-           const char *dir, bool print_path)
+           bool include_cursor, const char *dir, bool print_path)
 {
 	FILE *fp;
 	int16_t x, y;
@@ -248,6 +249,59 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	if (bpp != 32)
 		die("invalid pixel format received, expected: 32bpp got: %dbpp", bpp);
 
+	/*                      setup->image_byte_order                        */
+	/*     0 -> XCB_IMAGE_ORDER_LSB_FIRST (bgra) -> [ r:2, g: 1, b:0 ]     */
+	/*     1 -> XCB_IMAGE_ORDER_MSB_FIRST (argb) -> [ r:1, g: 2, b:3 ]     */
+	if (setup->image_byte_order == XCB_IMAGE_ORDER_LSB_FIRST) {
+		choff[0] = 2; choff[1] = 1; choff[2] = 0;
+	} else if (setup->image_byte_order == XCB_IMAGE_ORDER_MSB_FIRST) {
+		choff[0] = 1; choff[1] = 2; choff[2] = 3;
+	}
+
+	if (include_cursor) {
+		xcb_xfixes_query_version_cookie_t xfqvc;
+		xcb_xfixes_query_version_reply_t *xfqvr;
+		xcb_xfixes_get_cursor_image_cookie_t xfgcic;
+		xcb_xfixes_get_cursor_image_reply_t *xfgcir;
+		uint8_t *cur_pixels, cur_alpha;
+		int cur_rel_x, cur_rel_y;
+
+		xfqvc = xcb_xfixes_query_version(conn, XCB_XFIXES_MAJOR_VERSION, XCB_XFIXES_MINOR_VERSION);
+		xfqvr = xcb_xfixes_query_version_reply(conn, xfqvc, &error);
+
+		if (NULL != error)
+			die("xcb_xfixes_query_version failed with error code: %hhu", error->error_code);
+
+		xfgcic = xcb_xfixes_get_cursor_image(conn);
+		xfgcir = xcb_xfixes_get_cursor_image_reply(conn, xfgcic, &error);
+
+		if (NULL != error)
+			die("xcb_xfixes_get_cursor_image failed with error code: %hhu", error->error_code);
+
+		cur_pixels = (uint8_t *)(xcb_xfixes_get_cursor_image_cursor_image(xfgcir));
+		cur_rel_x = xfgcir->x - xfgcir->xhot - x;
+		cur_rel_y = xfgcir->y - xfgcir->yhot - y;
+
+		for (y = 0; y < xfgcir->height; ++y) {
+			if (y+cur_rel_y < 0 || y+cur_rel_y >= height)
+				continue;
+			for (x = 0; x < xfgcir->width; ++x) {
+				if (x+cur_rel_x < 0 || x+cur_rel_x >= width)
+					continue;
+				cur_alpha = cur_pixels[y*4*xfgcir->width+x*4+3];
+				pixels[(y+cur_rel_y)*4*width+(x+cur_rel_x)*4+choff[0]] +=
+					((cur_pixels[y*4*xfgcir->width+x*4+2] - pixels[(y+cur_rel_y)*4*width+(x+cur_rel_x)*4+choff[0]])*(cur_alpha))/255;
+				pixels[(y+cur_rel_y)*4*width+(x+cur_rel_x)*4+choff[1]] +=
+					((cur_pixels[y*4*xfgcir->width+x*4+1] - pixels[(y+cur_rel_y)*4*width+(x+cur_rel_x)*4+choff[1]])*(cur_alpha))/255;
+				pixels[(y+cur_rel_y)*4*width+(x+cur_rel_x)*4+choff[2]] +=
+					((cur_pixels[y*4*xfgcir->width+x*4+0] - pixels[(y+cur_rel_y)*4*width+(x+cur_rel_x)*4+choff[2]])*(cur_alpha))/255;
+			}
+		}
+
+		free(xfgcir);
+		free(xfqvr);
+	}
+
 	t = time(NULL);
 	now = localtime(&t);
 
@@ -265,15 +319,6 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 
 	if (print_path)
 		printf("%s\n", realpath(path, abpath) == NULL ? path : abpath);
-
-	/*                      setup->image_byte_order                        */
-	/*     0 -> XCB_IMAGE_ORDER_LSB_FIRST (bgra) -> [ r:2, g: 1, b:0 ]     */
-	/*     1 -> XCB_IMAGE_ORDER_MSB_FIRST (argb) -> [ r:1, g: 2, b:3 ]     */
-	if (setup->image_byte_order == XCB_IMAGE_ORDER_LSB_FIRST) {
-		choff[0] = 2; choff[1] = 1; choff[2] = 0;
-	} else if (setup->image_byte_order == XCB_IMAGE_ORDER_MSB_FIRST) {
-		choff[0] = 1; choff[1] = 2; choff[2] = 3;
-	}
 
 	if (NULL == (png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
 		die("png_create_write_struct failed");
@@ -319,11 +364,11 @@ main(int argc, char **argv)
 	xcb_connection_t *conn;
 	xcb_window_t wid;
 	const char *dir, *swid;
-	bool print_path;
+	bool print_path, include_cursor;
 
 	dir = ".";
 	swid = NULL;
-	print_path = false;
+	include_cursor = print_path = false;
 
 	while (++argv, --argc > 0) {
 		if ((*argv)[0] == '-' && (*argv)[1] != '\0' && (*argv)[2] == '\0') {
@@ -331,6 +376,7 @@ main(int argc, char **argv)
 				case 'h': usage(); break;
 				case 'v': version(); break;
 				case 'p': print_path = true; break;
+				case 'c': include_cursor = true; break;
 				case 'd': --argc; dir = enotnull(*++argv, "directory"); break;
 				case 'w': --argc; swid = enotnull(*++argv, "id"); break;
 				default: die("invalid option %s", *argv); break;
@@ -350,7 +396,7 @@ main(int argc, char **argv)
 		die("invalid window id format");
 	}
 
-	screenshot(conn, wid, dir, print_path);
+	screenshot(conn, wid, include_cursor, dir, print_path);
 	xcb_disconnect(conn);
 
 	return 0;

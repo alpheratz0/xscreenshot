@@ -216,10 +216,14 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	xcb_window_t root;
 	const xcb_setup_t *setup;
 	xcb_generic_error_t *error;
-	xcb_get_image_cookie_t cookie;
-	xcb_get_image_reply_t *reply;
-	uint8_t *pixels;
-	int bpp, choff[3];
+	xcb_get_image_cookie_t gic;
+	xcb_get_image_reply_t *gir;
+	xcb_xfixes_query_version_cookie_t xfqvc;
+	xcb_xfixes_query_version_reply_t *xfqvr;
+	xcb_xfixes_get_cursor_image_cookie_t xfgcic;
+	xcb_xfixes_get_cursor_image_reply_t *xfgcir;
+	uint8_t *pixels, *cur_pixels, cur_alpha;
+	int bpp, choff[3], cur_rel_x, cur_rel_y;
 	time_t t;
 	const struct tm *now;
 	struct stat sb;
@@ -233,18 +237,18 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 
 	setup = xcb_get_setup(conn);
 
-	cookie = xcb_get_image(
+	gic = xcb_get_image(
 		conn, XCB_IMAGE_FORMAT_Z_PIXMAP, root, x, y,
 		width, height, XCB_PLANES_ALL_PLANES
 	);
 
-	reply = xcb_get_image_reply(conn, cookie, &error);
+	gir = xcb_get_image_reply(conn, gic, &error);
 
 	if (NULL != error)
 		die("xcb_get_image failed with error code: %hhu", error->error_code);
 
-	pixels = xcb_get_image_data(reply);
-	bpp = (xcb_get_image_data_length(reply) * 8) / (width * height);
+	pixels = xcb_get_image_data(gir);
+	bpp = (xcb_get_image_data_length(gir) * 8) / (width * height);
 
 	if (bpp != 32)
 		die("invalid pixel format received, expected: 32bpp got: %dbpp", bpp);
@@ -259,13 +263,6 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	}
 
 	if (include_cursor) {
-		xcb_xfixes_query_version_cookie_t xfqvc;
-		xcb_xfixes_query_version_reply_t *xfqvr;
-		xcb_xfixes_get_cursor_image_cookie_t xfgcic;
-		xcb_xfixes_get_cursor_image_reply_t *xfgcir;
-		uint8_t *cur_pixels, cur_alpha;
-		int cur_rel_x, cur_rel_y;
-
 		xfqvc = xcb_xfixes_query_version(conn, XCB_XFIXES_MAJOR_VERSION, XCB_XFIXES_MINOR_VERSION);
 		xfqvr = xcb_xfixes_query_version_reply(conn, xfqvc, &error);
 
@@ -355,7 +352,7 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	png_destroy_write_struct(&png, NULL);
 	fclose(fp);
 	free(row);
-	free(reply);
+	free(gir);
 }
 
 int

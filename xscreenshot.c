@@ -50,6 +50,7 @@
 #define SCREENSHOT_DATE_FORMAT ("%Y%m%d%H%M%S")
 #define SCREENSHOT_DATE_LENGTH (sizeof("20220612093950"))
 #define XCB_PLANES_ALL_PLANES ((uint32_t)(~0UL))
+#define ALPHA_BLEND(a,b,alpha) (a+((b-a)*alpha)/255)
 
 static void
 die(const char *fmt, ...)
@@ -222,7 +223,7 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 	xcb_xfixes_query_version_reply_t *xfqvr;
 	xcb_xfixes_get_cursor_image_cookie_t xfgcic;
 	xcb_xfixes_get_cursor_image_reply_t *xfgcir;
-	uint8_t *pixels, *cur_pixels, cur_alpha;
+	uint8_t *pixels, *cur_pixels, *pixel, *cur_pixel;
 	int bpp, choff[3], cur_rel_x, cur_rel_y;
 	time_t t;
 	const struct tm *now;
@@ -285,13 +286,11 @@ screenshot(xcb_connection_t *conn, xcb_window_t window,
 			for (x = 0; x < xfgcir->width; ++x) {
 				if (x+cur_rel_x < 0 || x+cur_rel_x >= width)
 					continue;
-				cur_alpha = cur_pixels[y*4*xfgcir->width+x*4+3];
-				pixels[(y+cur_rel_y)*4*width+(x+cur_rel_x)*4+choff[0]] +=
-					((cur_pixels[y*4*xfgcir->width+x*4+2] - pixels[(y+cur_rel_y)*4*width+(x+cur_rel_x)*4+choff[0]])*(cur_alpha))/255;
-				pixels[(y+cur_rel_y)*4*width+(x+cur_rel_x)*4+choff[1]] +=
-					((cur_pixels[y*4*xfgcir->width+x*4+1] - pixels[(y+cur_rel_y)*4*width+(x+cur_rel_x)*4+choff[1]])*(cur_alpha))/255;
-				pixels[(y+cur_rel_y)*4*width+(x+cur_rel_x)*4+choff[2]] +=
-					((cur_pixels[y*4*xfgcir->width+x*4+0] - pixels[(y+cur_rel_y)*4*width+(x+cur_rel_x)*4+choff[2]])*(cur_alpha))/255;
+				pixel = &pixels[(y+cur_rel_y)*4*width+(x+cur_rel_x)*4];
+				cur_pixel = &cur_pixels[y*4*xfgcir->width+x*4];
+				pixel[choff[0]] = ALPHA_BLEND(pixel[choff[0]], cur_pixel[2], cur_pixel[3]);
+				pixel[choff[1]] = ALPHA_BLEND(pixel[choff[1]], cur_pixel[1], cur_pixel[3]);
+				pixel[choff[2]] = ALPHA_BLEND(pixel[choff[2]], cur_pixel[0], cur_pixel[3]);
 			}
 		}
 

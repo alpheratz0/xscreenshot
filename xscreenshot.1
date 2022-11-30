@@ -1,4 +1,4 @@
-.Dd November 18, 2022
+.Dd November 30, 2022
 .Dt XSCREENSHOT 1
 .Sh NAME
 .Nm xscreenshot
@@ -33,6 +33,8 @@ screenshot a specific window
 xscreenshot -w $(xwininfo | awk '/Window id:/{print $4}')
 .It take a screenshot and save it under ~/.screenshots
 xscreenshot -d ~/.screenshots
+.It take a screenshot of every screen
+xlsroots | xargs xscreenshot -w
 .It use apint to draw over a freshly taken screenshot
 apint -f -l $(xscreenshot -p -d $(mktemp -d))
 .El

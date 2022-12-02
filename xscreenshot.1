@@ -1,4 +1,4 @@
-.Dd December 01, 2022
+.Dd December 02, 2022
 .Dt XSCREENSHOT 1
 .Sh NAME
 .Nm xscreenshot
@@ -35,6 +35,8 @@ xscreenshot -w $(xwininfo | awk '/Window id:/{print $4}')
 xscreenshot -d ~/.screenshots
 .It take a screenshot of every screen
 xlsroots | xargs xscreenshot -w
+.It take a screenshot of the screen where the mouse is
+xhsr | xargs xscreenshot -w
 .It use apint to draw over a freshly taken screenshot
 apint -f -l $(xscreenshot -p -d $(mktemp -d))
 .El
@@ -43,6 +45,7 @@ apint -f -l $(xscreenshot -p -d $(mktemp -d))
 .Xr png 5
 .Xr apint 1
 .Xr xlsroots 1
+.Xr xhsr 1
 .Sh AUTHORS
 .An alpheratz0 Aq Mt alpheratz99@protonmail.com
 .Sh BUGS

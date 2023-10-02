@@ -6,7 +6,7 @@ include config.mk
 all: xscreenshot
 
 xscreenshot: xscreenshot.o
-	$(CC) $(LDFLAGS) -o xscreenshot xscreenshot.o $(LDLIBS)
+	$(CC) $(LDFLAGS) -o xscreenshot xscreenshot.o
 
 clean:
 	rm -f xscreenshot xscreenshot.o xscreenshot-$(VERSION).tar.gz
